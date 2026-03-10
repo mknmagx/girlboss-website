@@ -1,8 +1,50 @@
 @import "tailwindcss";
 
+/* Tailwind v4 — explicit source scanning for lib/ components */
+@source "../lib/**/*.{js,jsx,ts,tsx}";
+@source "../app/**/*.{js,jsx,ts,tsx}";
+
+/* ═══════════════════════════════════════════
+   GIRLBOSS — Design System Tokens
+   ═══════════════════════════════════════════ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Rose Gold & Blush Pink Palette */
+  --gb-rose-50: #fff5f5;
+  --gb-rose-100: #ffe4e6;
+  --gb-rose-200: #fecdd3;
+  --gb-rose-300: #fda4af;
+  --gb-rose-400: #fb7185;
+  --gb-rose-500: #f43f5e;
+  --gb-rose-gold: #b76e79;
+  --gb-rose-gold-light: #d4a0a7;
+  --gb-rose-gold-dark: #8b5a5a;
+
+  --gb-blush: #f8e8e8;
+  --gb-cream: #fdf8f5;
+  --gb-nude: #e8d5c4;
+  --gb-champagne: #f7e7ce;
+  --gb-gold: #c4a265;
+  --gb-gold-light: #d4b87a;
+
+  /* Neutrals */
+  --gb-black: #0a0a0a;
+  --gb-charcoal: #1a1a1a;
+  --gb-gray-900: #1f1f1f;
+  --gb-gray-800: #2d2d2d;
+  --gb-gray-700: #404040;
+  --gb-gray-600: #525252;
+  --gb-gray-500: #737373;
+  --gb-gray-400: #a3a3a3;
+  --gb-gray-300: #d4d4d4;
+  --gb-gray-200: #e5e5e5;
+  --gb-gray-100: #f5f5f5;
+  --gb-white: #fafafa;
+  --gb-pure-white: #ffffff;
+
+  /* Semantic */
+  --background: var(--gb-pure-white);
+  --foreground: var(--gb-black);
 }
 
 @theme inline {
@@ -10,17 +52,432 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Custom colors for Tailwind */
+  --color-gb-rose-50: var(--gb-rose-50);
+  --color-gb-rose-100: var(--gb-rose-100);
+  --color-gb-rose-200: var(--gb-rose-200);
+  --color-gb-rose-300: var(--gb-rose-300);
+  --color-gb-rose-400: var(--gb-rose-400);
+  --color-gb-rose-500: var(--gb-rose-500);
+  --color-gb-rose-gold: var(--gb-rose-gold);
+  --color-gb-rose-gold-light: var(--gb-rose-gold-light);
+  --color-gb-blush: var(--gb-blush);
+  --color-gb-cream: var(--gb-cream);
+  --color-gb-nude: var(--gb-nude);
+  --color-gb-champagne: var(--gb-champagne);
+  --color-gb-gold: var(--gb-gold);
+  --color-gb-gold-light: var(--gb-gold-light);
+  --color-gb-black: var(--gb-black);
+  --color-gb-charcoal: var(--gb-charcoal);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* GIRLBOSS is a light-mode-only brand — keep light palette regardless of OS setting */
+    --background: #ffffff;
+    --foreground: #0a0a0a;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ═══════════════════════════════════════════
+   Base Styles — inside @layer base so
+   Tailwind utilities can override them
+   ═══════════════════════════════════════════ */
+
+@layer base {
+  /* NOTE: Tailwind v4 Preflight already resets:
+     * { margin:0; padding:0; box-sizing:border-box; }
+     So we do NOT repeat that here. */
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: #ffffff;
+    color: #0a0a0a;
+    font-family: Arial, Helvetica, sans-serif;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--gb-rose-gold-light);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--gb-rose-gold);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Keyframe Animations
+   (kept outside layers — they are definitions,
+    not selectors, so no cascade conflict)
+   ═══════════════════════════════════════════ */
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(183, 110, 121, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(183, 110, 121, 0.4); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bottleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(1deg); }
+  50% { transform: translateY(-16px) rotate(0deg); }
+  75% { transform: translateY(-10px) rotate(-1deg); }
+}
+
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ═══════════════════════════════════════════
+   Component & Utility Classes — inside
+   @layer components so Tailwind utilities
+   can still override them when needed
+   ═══════════════════════════════════════════ */
+
+@layer components {
+  .text-shimmer {
+    background: linear-gradient(90deg, var(--gb-rose-gold), var(--gb-gold-light), var(--gb-rose-gold-light), var(--gb-rose-gold));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  .gb-gradient-text {
+    background: linear-gradient(to right, #b76e79, #c4587a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    display: inline;
+  }
+
+  .gb-gradient-text-warm {
+    background: linear-gradient(to right, #b76e79, #e890a8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    display: inline;
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-effect-light {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .gradient-bg-animated {
+    background: linear-gradient(-45deg, #0a0a0a, #1a0a10, #15050d, #0a0a0a);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  .gradient-bg-light {
+    background: linear-gradient(-45deg, #fff5f5, #fdf8f5, #f8e8e8, #fdf8f5);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+
+  .gradient-bg-blush {
+    background: linear-gradient(-45deg, #f8e8e8, #fecdd3, #f7e7ce, #ffe4e6);
+    background-size: 400% 400%;
+    animation: gradient-shift 12s ease infinite;
+  }
+
+  .hero-bg-static {
+    background: linear-gradient(135deg, #fde8ee 0%, #fce4ec 40%, #fdf0e8 100%);
+  }
+
+  .hero-fade   { animation: heroFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero-fade-1 { animation: heroFadeUp 0.7s 0.10s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero-fade-2 { animation: heroFadeUp 0.7s 0.20s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .hero-fade-3 { animation: heroFadeUp 0.7s 0.30s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  .bottle-float {
+    animation: bottleFloat 6s ease-in-out infinite;
+  }
+
+  .hover-lift {
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.4s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 60px rgba(183, 110, 121, 0.15);
+  }
+
+  /* Layout Helpers */
+  .gb-container {
+    width: 100%;
+    max-width: 72rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .gb-container-narrow {
+    width: 100%;
+    max-width: 56rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .page-hero {
+    padding-top: 7rem;
+    padding-bottom: 4rem;
+  }
+  .section-pad {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+  .section-pad-lg {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+
+  @media (min-width: 640px) {
+    .page-hero    { padding-top: 9rem; padding-bottom: 5rem; }
+    .section-pad  { padding-top: 6rem;  padding-bottom: 6rem; }
+    .section-pad-lg { padding-top: 7rem; padding-bottom: 7rem; }
+  }
+
+  @media (min-width: 640px) {
+    .gb-container        { padding-left: 2rem; padding-right: 2rem; }
+    .gb-container-narrow { padding-left: 2rem; padding-right: 2rem; }
+  }
+  @media (min-width: 1024px) {
+    .gb-container { padding-left: 2.5rem; padding-right: 2.5rem; }
+  }
+
+  /* Demo Switcher Styles */
+  .demo-switch-btn {
+    padding: 12px 28px;
+    border: 2px solid transparent;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .demo-switch-btn.active {
+    border-color: var(--gb-rose-gold);
+    background: var(--gb-rose-gold);
+    color: white;
+  }
+
+  .demo-switch-btn:not(.active) {
+    border-color: var(--gb-gray-300);
+    background: transparent;
+    color: var(--gb-gray-600);
+  }
+
+  .demo-switch-btn:not(.active):hover {
+    border-color: var(--gb-rose-gold-light);
+    color: var(--gb-rose-gold);
+  }
+
+  /* ── Product Detail — responsive image + info grid ── */
+  .product-detail-grid {
+    grid-template-columns: 1fr; /* mobile: single column */
+  }
+  @media (min-width: 768px) {
+    .product-detail-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 4rem !important;
+    }
+  }
+
+  /* ── Product notes (3-col) — stacks to 1-col on mobile ── */
+  .product-notes-grid {
+    grid-template-columns: 1fr; /* mobile: single column */
+  }
+  @media (min-width: 480px) {
+    .product-notes-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ── Product features (3-col) — stacks to 1-col on mobile ── */
+  .product-features-grid {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 480px) {
+    .product-features-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  /* ── Sepet (cart) layout — stack on mobile ── */
+  .cart-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 768px) {
+    .cart-layout-grid {
+      grid-template-columns: 2fr 1fr;
+      gap: 3rem !important;
+    }
+  }
+
+  /* Sipariş özeti: sticky sadece tablet+ */
+  .cart-summary-sticky {
+    position: static;
+  }
+  @media (min-width: 768px) {
+    .cart-summary-sticky {
+      position: sticky;
+      top: 7rem;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DARK MODE
+   Toggle via  html[data-theme="dark"]
+   ═══════════════════════════════════════════ */
+html[data-theme="dark"] {
+  --gb-page-bg:    #121212;
+  --gb-card-bg:    #1e1e1e;
+  --gb-card-border:#2e2e2e;
+  --gb-text-primary:  #f0e8e4;
+  --gb-text-secondary:#a3a3a3;
+  --gb-input-bg:   #2a2a2a;
+}
+
+html[data-theme="dark"] body {
+  background: #121212;
+  color: #f0e8e4;
+}
+
+/* Page backgrounds */
+html[data-theme="dark"] .bg-\[\#fdf8f5\],
+html[data-theme="dark"] .bg-\[\#ffffff\],
+html[data-theme="dark"] .bg-\[\#fafafa\] {
+  background-color: #121212 !important;
+}
+
+/* White cards / panels */
+html[data-theme="dark"] .bg-white {
+  background-color: #1e1e1e !important;
+  color: #f0e8e4;
+}
+
+/* Borders */
+html[data-theme="dark"] .border-\[\#f0e8e4\],
+html[data-theme="dark"] .border-\[\#e5e5e5\] {
+  border-color: #2e2e2e !important;
+}
+
+/* Text colors */
+html[data-theme="dark"] .text-\[\#2d2d2d\] { color: #f0e8e4 !important; }
+html[data-theme="dark"] .text-\[\#525252\] { color: #c0b8b5 !important; }
+html[data-theme="dark"] .text-\[\#737373\] { color: #a3a3a3 !important; }
+
+/* Navbar glass */
+html[data-theme="dark"] .glass-effect-light {
+  background: rgba(20, 20, 20, 0.88) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Note / feature cards */
+html[data-theme="dark"] .rounded-2xl.bg-white,
+html[data-theme="dark"] .rounded-3xl.bg-white,
+html[data-theme="dark"] .rounded-xl.bg-white {
+  background-color: #1e1e1e !important;
+}
+
+/* Hovering card border rose */
+html[data-theme="dark"] .hover\:border-\[\#fecdd3\]:hover {
+  border-color: #5a3040 !important;
+}
+
+/* Input fields */
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background-color: #2a2a2a !important;
+  color: #f0e8e4 !important;
+  border-color: #3a3a3a !important;
 }
