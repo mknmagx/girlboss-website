@@ -1,0 +1,86 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper Functions ─────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getUserRole() == 'admin';
+    }
+
+    function isEditor() {
+      return isSignedIn() && getUserRole() == 'editor';
+    }
+
+    function isAdminOrEditor() {
+      return isAdmin() || isEditor();
+    }
+
+    // ─── USERS ────────────────────────────────────────
+    match /users/{userId} {
+      // Users can read their own doc; admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      // Users can create their own doc on registration
+      allow create: if isOwner(userId);
+      // Users can update their own profile (except role/disabled);
+      // Admins can update any user
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'disabled'])
+      );
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // ─── PRODUCTS ─────────────────────────────────────
+    match /products/{productId} {
+      // Anyone can read products (public storefront)
+      allow read: if true;
+      // Only admin/editor can create, update, delete
+      allow create, update: if isAdminOrEditor();
+      allow delete: if isAdmin();
+    }
+
+    // ─── ORDERS ───────────────────────────────────────
+    match /orders/{orderId} {
+      // Users can read their own orders; admins can read all
+      allow read: if isAdmin() || (
+        isSignedIn() && resource.data.uid == request.auth.uid
+      );
+      // Signed-in users can create orders (their own)
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+      // Only admins can update order status
+      allow update: if isAdmin();
+      // Only admins can delete orders
+      allow delete: if isAdmin();
+    }
+
+    // ─── BLOG ─────────────────────────────────────────
+    match /blog/{postId} {
+      // Published posts are public; admins/editors see all
+      allow read: if resource.data.published == true || isAdminOrEditor();
+      allow create, update: if isAdminOrEditor();
+      allow delete: if isAdmin();
+    }
+
+    // ─── SETTINGS ─────────────────────────────────────
+    match /settings/{document} {
+      // Everyone can read settings (used for shipping costs, etc.)
+      allow read: if true;
+      // Only admins can update settings
+      allow write: if isAdmin();
+    }
+  }
+}

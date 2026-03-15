@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Heart, Sparkles, Menu, X, User, LogOut, ChevronDown } from "lucide-react";
+import { ShoppingBag, Heart, Sparkles, Menu, X, User, LogOut, ChevronDown, Shield } from "lucide-react";
 import { brand } from "@/lib/data/products";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -22,7 +22,7 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { count: favCount } = useFavorites();
   const { count: cartCount } = useCart();
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, user, logout, hasAdminAccess } = useAuth();
   const router = useRouter();
   const userMenuRef = useRef(null);
 
@@ -138,9 +138,26 @@ export default function Navbar() {
                         <User size={14} className="text-[#b76e79]" />
                         Profilim
                       </Link>
+                      {hasAdminAccess && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "0.5rem",
+                            padding: "0.625rem 0.875rem", borderRadius: "0.75rem",
+                            fontSize: "0.8125rem", fontWeight: 600, color: "#b76e79",
+                            textDecoration: "none",
+                            transition: "background 0.15s",
+                          }}
+                          className="hover:bg-[#fff0f3]"
+                        >
+                          <Shield size={14} className="text-[#b76e79]" />
+                          Admin Panel
+                        </Link>
+                      )}
                       <div style={{ height: "1px", background: "#f0e8e4", margin: "0.25rem 0" }} />
                       <button
-                        onClick={() => { logout(); setUserMenuOpen(false); router.push("/"); }}
+                        onClick={async () => { await logout(); setUserMenuOpen(false); router.push("/"); }}
                         style={{
                           display: "flex", alignItems: "center", gap: "0.5rem",
                           padding: "0.625rem 0.875rem", borderRadius: "0.75rem",
@@ -226,9 +243,16 @@ export default function Navbar() {
               </div>
               <div className="h-px bg-[#f0e8e4]" />
               {isLoggedIn ? (
-                <div className="flex gap-3">
-                  <Link href="/kullanici" onClick={() => setMenuOpen(false)} className="flex-1 py-2.5 bg-[#fdf8f5] text-[#b76e79] text-sm font-semibold rounded-xl text-center">Profilim</Link>
-                  <button onClick={() => { logout(); setMenuOpen(false); router.push("/"); }} className="flex-1 py-2.5 bg-[#fff0f0] text-red-500 text-sm font-semibold rounded-xl text-center border-none cursor-pointer">Çıkış Yap</button>
+                <div className="flex flex-col gap-2">
+                  <div className="flex gap-3">
+                    <Link href="/kullanici" onClick={() => setMenuOpen(false)} className="flex-1 py-2.5 bg-[#fdf8f5] text-[#b76e79] text-sm font-semibold rounded-xl text-center">Profilim</Link>
+                    <button onClick={async () => { await logout(); setMenuOpen(false); router.push("/"); }} className="flex-1 py-2.5 bg-[#fff0f0] text-red-500 text-sm font-semibold rounded-xl text-center border-none cursor-pointer">Çıkış Yap</button>
+                  </div>
+                  {hasAdminAccess && (
+                    <Link href="/admin" onClick={() => setMenuOpen(false)} className="py-2.5 bg-[#fff0f3] text-[#b76e79] text-sm font-semibold rounded-xl text-center flex items-center justify-center gap-1.5">
+                      <Shield size={14} /> Admin Panel
+                    </Link>
+                  )}
                 </div>
               ) : (
                 <div className="flex gap-3">
