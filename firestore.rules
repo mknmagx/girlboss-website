@@ -82,5 +82,15 @@ service cloud.firestore {
       // Only admins can update settings
       allow write: if isAdmin();
     }
+
+    // ─── DISCOUNTS ────────────────────────────────────
+    match /discounts/{discountId} {
+      // Anyone can read active discounts (needed by storefront for coupon validation, banners)
+      allow read: if true;
+      // Only admin/editor can create or update discounts
+      allow create, update: if isAdminOrEditor();
+      // Only admins can delete discounts
+      allow delete: if isAdmin();
+    }
   }
 }

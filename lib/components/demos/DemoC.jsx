@@ -38,9 +38,7 @@ function Navbar() {
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           {/* Logo */}
           <motion.a href="/" whileHover={{ scale: 1.03 }} className="flex items-center gap-2.5 cursor-pointer">
-            <div className="w-9 h-9 rounded-full bg-linear-to-br from-[#b76e79] to-[#e890a8] flex items-center justify-center shadow-sm">
-              <Sparkles size={14} className="text-white" />
-            </div>
+            <img src="/icon.png" alt="GIRLBOSS" className="h-10 w-auto" />
             <span className="text-lg font-bold tracking-[0.2em] text-[#2d2d2d]">{brand.name}</span>
           </motion.a>
 
@@ -440,9 +438,7 @@ function Footer() {
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-9 h-9 rounded-full bg-linear-to-br from-[#b76e79] to-[#e890a8] flex items-center justify-center">
-                <Sparkles size={14} className="text-white" />
-              </div>
+              <img src="/icon.png" alt="GIRLBOSS" className="h-10 w-auto" />
               <span className="text-lg font-bold tracking-[0.2em]">{brand.name}</span>
             </div>
             <p className="text-sm text-[#888] leading-relaxed mb-6 max-w-xs">

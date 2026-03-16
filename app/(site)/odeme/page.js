@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck,
@@ -20,17 +21,22 @@ import {
   Plus,
   FileText,
   X,
+  Tag,
+  Percent,
+  Gift,
 } from "lucide-react";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useCart } from "@/lib/hooks/useCart";
 import { useAddresses } from "@/lib/hooks/useAddresses";
-import { createOrder, getSettings } from "@/lib/firebase/firestore";
+import { useDiscounts } from "@/lib/hooks/useDiscounts";
+import { createOrder, getSettings, getOrdersByUser } from "@/lib/firebase/firestore";
 import { useRouter } from "next/navigation";
 import Navbar from "@/lib/components/Navbar";
 import Footer from "@/lib/components/Footer";
 import GBButton from "@/lib/components/ui/GBButton";
 import GBInput from "@/lib/components/ui/GBInput";
 import Link from "next/link";
+import { company } from "@/lib/config/company";
 
 const FREE_SHIPPING_THRESHOLD_DEFAULT = 500;
 const SHIPPING_COST_DEFAULT = 29.9;
@@ -83,7 +89,14 @@ function SectionCard({ icon: Icon, title, right, children }) {
         >
           <Icon size={13} color="white" />
         </div>
-        <h2 style={{ fontSize: "1rem", fontWeight: "700", color: "#2d2d2d", minWidth: 0 }}>
+        <h2
+          style={{
+            fontSize: "1rem",
+            fontWeight: "700",
+            color: "#2d2d2d",
+            minWidth: 0,
+          }}
+        >
           {title}
         </h2>
         {right && <div style={{ marginLeft: "auto" }}>{right}</div>}
@@ -103,8 +116,10 @@ const LEGAL_TEXTS = {
 (6502 Sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği kapsamında hazırlanmıştır)
 
 1. SATICI BİLGİLERİ
-Unvan: GirlBoss Parfümeri
-E-posta: iletisim@girlboss.com.tr
+Unvan: ${company.legalName}
+Marka: ${company.brandName}
+Adres: ${company.address}
+E-posta: ${company.email}
 
 2. SÖZLEŞMENİN KONUSU
 Bu form, elektronik ortamda gerçekleştirilen alışverişe ilişkin 6502 Sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca hazırlanmıştır.
@@ -125,7 +140,7 @@ Kredi/banka kartı, kapıda ödeme veya havale/EFT yöntemleriyle ödeme yapıla
 Mesafeli sözleşmelerde tüketici, herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşme tarihinden itibaren 14 (on dört) takvim günü içinde cayma hakkına sahiptir.
 
 Cayma hakkının kullanılması için aşağıdaki adrese yazılı bildirim iletilmelidir:
-E-posta: iletisim@girlboss.com.tr
+E-posta: ${company.email}
 
 Cayma hakkının kullanımında ürün, orijinal ambalajıyla ve eksiksiz olarak iade edilmelidir.
 
@@ -145,8 +160,10 @@ Kişisel verileriniz yürürlükteki KVKK mevzuatı çerçevesinde işlenmektedi
 
 MADDE 1 – TARAFLAR
 SATICI:
-GirlBoss Parfümeri
-E-posta: iletisim@girlboss.com.tr
+${company.legalName}
+Marka: ${company.brandName}
+Adres: ${company.address}
+E-posta: ${company.email}
 
 ALICI: Sipariş formunda belirtilen ad, soyad ve iletişim bilgilerine sahip kişi.
 
@@ -167,7 +184,7 @@ Seçilen ödeme yöntemine göre ödeme alınır. Kapıda ödeme seçilmişse te
 MADDE 6 – CAYMA HAKKI
 6.1. Alıcı, ürünü teslim aldığı tarihten itibaren 14 (on dört) takvim günü içinde herhangi bir gerekçe göstermeksizin ve cezai şart ödemeksizin sözleşmeden cayma hakkına sahiptir.
 6.2. Cayma hakkının kullanılması için ürünler kullanılmamış, orijinal ambalajıyla, eksiksiz ve hasarsız olarak iade edilmelidir.
-6.3. Cayma bildirimi e-posta aracılığıyla iletisim@girlboss.com.tr adresine yapılabilir.
+6.3. Cayma bildirimi e-posta aracılığıyla ${company.email} adresine yapılabilir.
 6.4. Cayma hakkının kullanılması halinde, ürünün Satıcı'ya iade kargo ücreti Alıcı'ya aittir.
 6.5. Satıcı, cayma bildirimini aldıktan sonra 14 gün içinde ödemeyi iade eder.
 
@@ -189,7 +206,7 @@ Alıcı, sipariş işlemini tamamlayarak bu sözleşmenin tüm hükümlerini oku
 (6698 Sayılı Kişisel Verilerin Korunması Kanunu kapsamında)
 
 1. VERİ SORUMLUSU
-GirlBoss Parfümeri, 6698 Sayılı Kişisel Verilerin Korunması Kanunu kapsamında veri sorumlusudur.
+${company.legalName} (${company.brandName} markası işletmecisi), 6698 Sayılı Kişisel Verilerin Korunması Kanunu kapsamında veri sorumlusudur.
 
 2. İŞLENEN KİŞİSEL VERİLER
 Alışveriş sürecinde aşağıdaki kişisel verileriniz işlenmektedir:
@@ -225,7 +242,7 @@ KVKK'nın 11. maddesi kapsamında aşağıdaki haklarınız bulunmaktadır:
 - İşlenen verilerin otomatik sistemler aracılığıyla analiz edilmesi sonucunda aleyhinize bir sonucun ortaya çıkmasına itiraz etme
 - Kanuna aykırı işleme nedeniyle zarara uğramanız halinde zararın giderilmesini talep etme
 
-Haklarınızı kullanmak için: iletisim@girlboss.com.tr adresine e-posta gönderebilirsiniz.`,
+Haklarınızı kullanmak için: ${company.kvkkEmail} adresine e-posta gönderebilirsiniz.`,
   },
 };
 
@@ -235,39 +252,88 @@ function LegalModal({ modalKey, onClose }) {
   return (
     <div
       style={{
-        position: "fixed", inset: 0, zIndex: 9999,
-        display: "flex", alignItems: "center", justifyContent: "center",
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         padding: "1rem",
       }}
     >
       <div
-        style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(0,0,0,0.55)",
+          backdropFilter: "blur(2px)",
+        }}
         onClick={onClose}
       />
       <div
         style={{
-          position: "relative", background: "#fff", borderRadius: "1.5rem",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.22)", maxWidth: "48rem",
-          width: "100%", maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden",
+          position: "relative",
+          background: "#fff",
+          borderRadius: "1.5rem",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.22)",
+          maxWidth: "48rem",
+          width: "100%",
+          maxHeight: "85vh",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         {/* Header */}
         <div
           style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "1.25rem 1.75rem", borderBottom: "1px solid #f0e8e4",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "1.25rem 1.75rem",
+            borderBottom: "1px solid #f0e8e4",
             background: "#fdf8f5",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}>
-            <div style={{ width: "1.75rem", height: "1.75rem", background: "linear-gradient(135deg, #b76e79, #e890a8)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: "0.625rem" }}
+          >
+            <div
+              style={{
+                width: "1.75rem",
+                height: "1.75rem",
+                background: "linear-gradient(135deg, #b76e79, #e890a8)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <FileText size={11} color="white" />
             </div>
-            <h3 style={{ fontWeight: "700", fontSize: "0.9375rem", color: "#2d2d2d" }}>{doc.title}</h3>
+            <h3
+              style={{
+                fontWeight: "700",
+                fontSize: "0.9375rem",
+                color: "#2d2d2d",
+              }}
+            >
+              {doc.title}
+            </h3>
           </div>
           <button
             onClick={onClose}
-            style={{ padding: "0.375rem", borderRadius: "50%", border: "none", background: "#f5f5f5", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+            style={{
+              padding: "0.375rem",
+              borderRadius: "50%",
+              border: "none",
+              background: "#f5f5f5",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
           >
             <X size={16} color="#737373" />
           </button>
@@ -275,22 +341,37 @@ function LegalModal({ modalKey, onClose }) {
         {/* Content */}
         <div
           style={{
-            overflowY: "auto", padding: "1.75rem",
-            fontSize: "0.8125rem", color: "#525252", lineHeight: "1.75",
-            whiteSpace: "pre-wrap", flex: 1,
+            overflowY: "auto",
+            padding: "1.75rem",
+            fontSize: "0.8125rem",
+            color: "#525252",
+            lineHeight: "1.75",
+            whiteSpace: "pre-wrap",
+            flex: 1,
           }}
         >
           {doc.content}
         </div>
         {/* Footer */}
-        <div style={{ padding: "1rem 1.75rem", borderTop: "1px solid #f0e8e4", background: "#fdf8f5" }}>
+        <div
+          style={{
+            padding: "1rem 1.75rem",
+            borderTop: "1px solid #f0e8e4",
+            background: "#fdf8f5",
+          }}
+        >
           <button
             onClick={onClose}
             style={{
-              width: "100%", padding: "0.75rem",
+              width: "100%",
+              padding: "0.75rem",
               background: "linear-gradient(to right, #b76e79, #c4587a)",
-              color: "#fff", border: "none", borderRadius: "0.75rem",
-              fontWeight: "700", fontSize: "0.875rem", cursor: "pointer",
+              color: "#fff",
+              border: "none",
+              borderRadius: "0.75rem",
+              fontWeight: "700",
+              fontSize: "0.875rem",
+              cursor: "pointer",
             }}
           >
             Kapat
@@ -316,11 +397,52 @@ export default function OdemePage() {
     getSettings().then((s) => setSiteSettings(s));
   }, []);
 
-  const FREE_SHIPPING_THRESHOLD = Number(siteSettings?.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD_DEFAULT);
-  const SHIPPING_COST = Number(siteSettings?.shippingCost ?? SHIPPING_COST_DEFAULT);
+  /* first-order detection */
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
+  useEffect(() => {
+    if (!user) { setIsFirstOrder(false); return; }
+    getOrdersByUser(user.uid).then((orders) => setIsFirstOrder(orders.length === 0));
+  }, [user?.uid]);
+
+  /* Discounts engine */
+  const { applyToCart } = useDiscounts();
+
+  /* Coupon restored from sessionStorage */
+  const [appliedCouponCode, setAppliedCouponCode] = useState("");
+  useEffect(() => {
+    const saved = sessionStorage.getItem("gb_coupon");
+    if (saved) {
+      try {
+        const { code } = JSON.parse(saved);
+        setAppliedCouponCode(code);
+      } catch {}
+    }
+  }, []);
+
+  /* Discount result (memoized) */
+  const discountResult = useMemo(
+    () => applyToCart(cart, appliedCouponCode, isFirstOrder),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cart, appliedCouponCode, isFirstOrder],
+  );
+  const {
+    breakdown: discountBreakdown,
+    totalDiscount,
+    appliedCoupon,
+  } = discountResult;
+
+  const FREE_SHIPPING_THRESHOLD = Number(
+    siteSettings?.freeShippingThreshold ?? FREE_SHIPPING_THRESHOLD_DEFAULT,
+  );
+  const SHIPPING_COST = Number(
+    siteSettings?.shippingCost ?? SHIPPING_COST_DEFAULT,
+  );
   const activeCarrier = (siteSettings?.carriers ?? []).find((c) => c.enabled);
   const pm = siteSettings?.paymentMethods ?? null;
-  const pmCC = pm?.creditCard ?? { enabled: true, cards: ["VISA", "MC", "AMEX", "TROY"] };
+  const pmCC = pm?.creditCard ?? {
+    enabled: true,
+    cards: ["VISA", "MC", "AMEX", "TROY"],
+  };
   const pmCOD = pm?.cashOnDelivery ?? { enabled: true, fee: 15 };
   const pmBT = pm?.bankTransfer ?? { enabled: false };
   /* payment method selection state — default to credit card if available */
@@ -330,7 +452,12 @@ export default function OdemePage() {
   const [selectedAddressId, setSelectedAddressId] = useState(null); // null = none chosen yet
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [consents, setConsents] = useState({ bilgilendirme: false, sozlesme: false, kvkk: false, pazarlama: false });
+  const [consents, setConsents] = useState({
+    bilgilendirme: false,
+    sozlesme: false,
+    kvkk: false,
+    pazarlama: false,
+  });
   const [consentError, setConsentError] = useState("");
   const [legalModal, setLegalModal] = useState(null);
   const [orderId, setOrderId] = useState(null);
@@ -361,7 +488,7 @@ export default function OdemePage() {
 
   const codFee = payMethod === "cashOnDelivery" ? Number(pmCOD.fee ?? 15) : 0;
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const total = subtotal + shipping + codFee;
+  const total = subtotal + shipping + codFee - totalDiscount;
   const isReady = user || guestMode;
 
   function setD(field, value) {
@@ -440,17 +567,25 @@ export default function OdemePage() {
     const ce = validateCard();
     if (Object.keys(de).length) {
       setDErr(de);
-      document.getElementById("delivery-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("delivery-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (Object.keys(ce).length) {
       setCErr(ce);
-      document.getElementById("payment-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("payment-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (!consents.bilgilendirme || !consents.sozlesme || !consents.kvkk) {
-      setConsentError("Siparişi tamamlamak için tüm zorunlu onayları vermeniz gerekmektedir.");
-      document.getElementById("legal-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setConsentError(
+        "Siparişi tamamlamak için tüm zorunlu onayları vermeniz gerekmektedir.",
+      );
+      document
+        .getElementById("legal-section")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     setConsentError("");
@@ -489,7 +624,8 @@ export default function OdemePage() {
         subtotal,
         shipping,
         codFee,
-        discount: 0,
+        discount: totalDiscount,
+        couponCode: appliedCoupon ? appliedCoupon.code : null,
         total,
         paymentMethod: payMethod,
         use3DSecure: payMethod === "creditCard" ? use3DSecure : null,
@@ -506,8 +642,9 @@ export default function OdemePage() {
         },
       });
       setOrderId(newOrderId);
-      setOrderSnapshot({ subtotal, shipping, codFee, total });
+      setOrderSnapshot({ subtotal, shipping, codFee, discount: totalDiscount, total });
       clearCart();
+      sessionStorage.removeItem("gb_coupon");
       setSubmitted(true);
     } catch {
       // Silent fail — show success anyway as this is a demo
@@ -538,6 +675,15 @@ export default function OdemePage() {
             >
               <Lock size={13} />
               <span>256-bit SSL ile korunan ödeme</span>
+            </div>
+            <div className="flex items-center justify-center gap-3 mt-3">
+              <Image
+                src="/logo_band_colored@1X.png"
+                alt="Visa Mastercard Troy"
+                width={144}
+                height={20}
+                style={{ height: "20px", width: "auto" }}
+              />
             </div>
           </div>
         </div>
@@ -601,11 +747,10 @@ export default function OdemePage() {
                   Alışverişe Başla
                 </GBButton>
               </motion.div>
-
-            /* ─────────────────────────────────
+            ) : /* ─────────────────────────────────
                 Order Confirmed
             ───────────────────────────────── */
-            ) : submitted ? (
+            submitted ? (
               <motion.div
                 key="success"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -631,8 +776,7 @@ export default function OdemePage() {
                   style={{
                     width: "5rem",
                     height: "5rem",
-                    background:
-                      "linear-gradient(135deg, #b76e79, #e890a8)",
+                    background: "linear-gradient(135deg, #b76e79, #e890a8)",
                     borderRadius: "50%",
                     display: "flex",
                     alignItems: "center",
@@ -653,61 +797,170 @@ export default function OdemePage() {
                 >
                   Siparişin Alındı!
                 </h2>
-                <p style={{ fontSize: "0.875rem", color: "#737373", marginBottom: "1.5rem" }}>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "#737373",
+                    marginBottom: "1.5rem",
+                  }}
+                >
                   Teşekkürler. Siparişini en kısa sürede kargoya vereceğiz.
                 </p>
 
                 {/* Order details card */}
                 <div
                   style={{
-                    background: "white", borderRadius: "1.25rem", border: "1px solid #f0e8e4",
-                    padding: "1.5rem", marginBottom: "1.75rem", textAlign: "left",
+                    background: "white",
+                    borderRadius: "1.25rem",
+                    border: "1px solid #f0e8e4",
+                    padding: "1.5rem",
+                    marginBottom: "1.75rem",
+                    textAlign: "left",
                     boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
                   }}
                 >
                   {orderId && (
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.875rem", borderBottom: "1px solid #f0e8e4" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#737373", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>Sipariş No</span>
-                      <span style={{ fontFamily: "monospace", fontSize: "0.8125rem", fontWeight: "700", color: "#b76e79", background: "#fff5f7", padding: "0.25rem 0.625rem", borderRadius: "0.5rem", border: "1px solid #fce4ec" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "1rem",
+                        paddingBottom: "0.875rem",
+                        borderBottom: "1px solid #f0e8e4",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#737373",
+                          fontWeight: "600",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Sipariş No
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "monospace",
+                          fontSize: "0.8125rem",
+                          fontWeight: "700",
+                          color: "#b76e79",
+                          background: "#fff5f7",
+                          padding: "0.25rem 0.625rem",
+                          borderRadius: "0.5rem",
+                          border: "1px solid #fce4ec",
+                        }}
+                      >
                         #{orderId.slice(-8).toUpperCase()}
                       </span>
                     </div>
                   )}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.625rem",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
                       <span style={{ color: "#737373" }}>Ödeme Yöntemi</span>
                       <span style={{ fontWeight: "600", color: "#2d2d2d" }}>
-                        {payMethod === "creditCard" ? "Kredi / Banka Kartı" : payMethod === "cashOnDelivery" ? "Kapıda Ödeme" : "Havale / EFT"}
+                        {payMethod === "creditCard"
+                          ? "Kredi / Banka Kartı"
+                          : payMethod === "cashOnDelivery"
+                            ? "Kapıda Ödeme"
+                            : "Havale / EFT"}
                       </span>
                     </div>
                     {activeCarrier && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "0.8125rem",
+                        }}
+                      >
                         <span style={{ color: "#737373" }}>Kargo Firması</span>
-                        <span style={{ fontWeight: "600", color: "#2d2d2d" }}>{activeCarrier.name}</span>
+                        <span style={{ fontWeight: "600", color: "#2d2d2d" }}>
+                          {activeCarrier.name}
+                        </span>
                       </div>
                     )}
                     {activeCarrier?.estimatedDays && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
-                        <span style={{ color: "#737373" }}>Tahmini Teslimat</span>
-                        <span style={{ fontWeight: "600", color: "#22c55e" }}>{activeCarrier.estimatedDays} iş günü</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "0.8125rem",
+                        }}
+                      >
+                        <span style={{ color: "#737373" }}>
+                          Tahmini Teslimat
+                        </span>
+                        <span style={{ fontWeight: "600", color: "#22c55e" }}>
+                          {activeCarrier.estimatedDays} iş günü
+                        </span>
                       </div>
                     )}
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
                       <span style={{ color: "#737373" }}>Toplam Tutar</span>
-                      <span style={{ fontWeight: "800", color: "#2d2d2d" }}>₺{(orderSnapshot?.total ?? 0).toFixed(2)}</span>
+                      <span style={{ fontWeight: "800", color: "#2d2d2d" }}>
+                        ₺{(orderSnapshot?.total ?? 0).toFixed(2)}
+                      </span>
                     </div>
-                    <div style={{ height: "1px", background: "#f0e8e4", margin: "0.25rem 0" }} />
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8125rem" }}>
+                    <div
+                      style={{
+                        height: "1px",
+                        background: "#f0e8e4",
+                        margin: "0.25rem 0",
+                      }}
+                    />
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: "0.8125rem",
+                      }}
+                    >
                       <span style={{ color: "#737373" }}>Teslimat Adresi</span>
-                      <span style={{ fontWeight: "600", color: "#2d2d2d", textAlign: "right", maxWidth: "14rem" }}>
-                        {delivery.ad} {delivery.soyad}, {delivery.ilce} / {delivery.sehir}
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          color: "#2d2d2d",
+                          textAlign: "right",
+                          maxWidth: "14rem",
+                        }}
+                      >
+                        {delivery.ad} {delivery.soyad}, {delivery.ilce} /{" "}
+                        {delivery.sehir}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <p style={{ fontSize: "0.8125rem", color: "#737373", marginBottom: "2rem" }}>
-                  Sipariş özeti <strong>{delivery.email || user?.email}</strong> adresine gönderildi.
+                <p
+                  style={{
+                    fontSize: "0.8125rem",
+                    color: "#737373",
+                    marginBottom: "2rem",
+                  }}
+                >
+                  Sipariş özeti <strong>{delivery.email || user?.email}</strong>{" "}
+                  adresine gönderildi.
                 </p>
                 <div
                   style={{
@@ -725,11 +978,10 @@ export default function OdemePage() {
                   </GBButton>
                 </div>
               </motion.div>
-
-            /* ─────────────────────────────────
+            ) : /* ─────────────────────────────────
                 Auth Gate  (not logged in, no guest mode)
             ───────────────────────────────── */
-            ) : !isReady ? (
+            !isReady ? (
               <motion.div
                 key="auth-gate"
                 initial={{ opacity: 0, y: 24 }}
@@ -795,8 +1047,7 @@ export default function OdemePage() {
                       style={{
                         width: "3.25rem",
                         height: "3.25rem",
-                        background:
-                          "linear-gradient(135deg, #b76e79, #e890a8)",
+                        background: "linear-gradient(135deg, #b76e79, #e890a8)",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
@@ -864,8 +1115,7 @@ export default function OdemePage() {
                       style={{
                         width: "3.25rem",
                         height: "3.25rem",
-                        background:
-                          "linear-gradient(135deg, #c4a265, #d4b87a)",
+                        background: "linear-gradient(135deg, #c4a265, #d4b87a)",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
@@ -912,11 +1162,10 @@ export default function OdemePage() {
                   </motion.div>
                 </div>
               </motion.div>
-
-            /* ─────────────────────────────────
+            ) : (
+              /* ─────────────────────────────────
                 Checkout Form
             ───────────────────────────────── */
-            ) : (
               <motion.form
                 key="checkout"
                 initial={{ opacity: 0, y: 24 }}
@@ -953,7 +1202,11 @@ export default function OdemePage() {
                         flexWrap: "wrap",
                       }}
                     >
-                      <Zap size={14} color="#c4a265" style={{ flexShrink: 0 }} />
+                      <Zap
+                        size={14}
+                        color="#c4a265"
+                        style={{ flexShrink: 0 }}
+                      />
                       <span
                         style={{
                           fontSize: "0.8125rem",
@@ -991,38 +1244,73 @@ export default function OdemePage() {
                       {/* ── Saved address picker (logged-in users only) ── */}
                       {user && addresses.length > 0 && (
                         <div style={{ marginBottom: "1.5rem" }}>
-                          <p style={{ fontSize: "0.75rem", fontWeight: "600", color: "#525252", marginBottom: "0.625rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                          <p
+                            style={{
+                              fontSize: "0.75rem",
+                              fontWeight: "600",
+                              color: "#525252",
+                              marginBottom: "0.625rem",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.05em",
+                            }}
+                          >
                             Kayıtlı Adreslerim
                           </p>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.625rem", marginBottom: "0.875rem" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "0.625rem",
+                              marginBottom: "0.875rem",
+                            }}
+                          >
                             {addresses.map((addr) => {
-                              const Icon = TITLE_ICONS[addr.baslik] || Building2;
+                              const Icon =
+                                TITLE_ICONS[addr.baslik] || Building2;
                               const isSelected = selectedAddressId === addr.id;
                               return (
                                 <button
                                   key={addr.id}
                                   type="button"
-                                  onClick={() => { setSelectedAddressId(addr.id); applyAddress(addr); }}
+                                  onClick={() => {
+                                    setSelectedAddressId(addr.id);
+                                    applyAddress(addr);
+                                  }}
                                   style={{
-                                    display: "flex", alignItems: "center", gap: "0.5rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
                                     padding: "0.5rem 0.875rem",
                                     borderRadius: "9999px",
-                                    border: isSelected ? "1.5px solid #b76e79" : "1.5px solid #e5e5e5",
+                                    border: isSelected
+                                      ? "1.5px solid #b76e79"
+                                      : "1.5px solid #e5e5e5",
                                     background: isSelected ? "#fff0f3" : "#fff",
                                     color: isSelected ? "#b76e79" : "#525252",
-                                    fontSize: "0.8125rem", fontWeight: isSelected ? "700" : "500",
-                                    cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap",
+                                    fontSize: "0.8125rem",
+                                    fontWeight: isSelected ? "700" : "500",
+                                    cursor: "pointer",
+                                    transition: "all 0.15s",
+                                    whiteSpace: "nowrap",
                                   }}
                                 >
                                   <Icon size={12} />
                                   {TITLE_LABELS[addr.baslik] || "Adres"}
                                   {addr.isDefault && (
-                                    <span style={{
-                                      fontSize: "0.6rem", fontWeight: "700",
-                                      background: isSelected ? "#b76e79" : "#e5e5e5",
-                                      color: isSelected ? "#fff" : "#737373",
-                                      padding: "0.1rem 0.375rem", borderRadius: "9999px",
-                                    }}>Varsayılan</span>
+                                    <span
+                                      style={{
+                                        fontSize: "0.6rem",
+                                        fontWeight: "700",
+                                        background: isSelected
+                                          ? "#b76e79"
+                                          : "#e5e5e5",
+                                        color: isSelected ? "#fff" : "#737373",
+                                        padding: "0.1rem 0.375rem",
+                                        borderRadius: "9999px",
+                                      }}
+                                    >
+                                      Varsayılan
+                                    </span>
                                   )}
                                 </button>
                               );
@@ -1031,23 +1319,53 @@ export default function OdemePage() {
                               type="button"
                               onClick={() => {
                                 setSelectedAddressId("new");
-                                setDelivery({ ad: "", soyad: "", email: user?.email || "", telefon: "", adres: "", sehir: "", ilce: "", postakodu: "" });
+                                setDelivery({
+                                  ad: "",
+                                  soyad: "",
+                                  email: user?.email || "",
+                                  telefon: "",
+                                  adres: "",
+                                  sehir: "",
+                                  ilce: "",
+                                  postakodu: "",
+                                });
                                 setDErr({});
                               }}
                               style={{
-                                display: "flex", alignItems: "center", gap: "0.5rem",
-                                padding: "0.5rem 0.875rem", borderRadius: "9999px",
-                                border: selectedAddressId === "new" ? "1.5px solid #c4a265" : "1.5px dashed #e5e5e5",
-                                background: selectedAddressId === "new" ? "#fffbf0" : "#fff",
-                                color: selectedAddressId === "new" ? "#c4a265" : "#737373",
-                                fontSize: "0.8125rem", fontWeight: "600", cursor: "pointer", transition: "all 0.15s",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                padding: "0.5rem 0.875rem",
+                                borderRadius: "9999px",
+                                border:
+                                  selectedAddressId === "new"
+                                    ? "1.5px solid #c4a265"
+                                    : "1.5px dashed #e5e5e5",
+                                background:
+                                  selectedAddressId === "new"
+                                    ? "#fffbf0"
+                                    : "#fff",
+                                color:
+                                  selectedAddressId === "new"
+                                    ? "#c4a265"
+                                    : "#737373",
+                                fontSize: "0.8125rem",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                                transition: "all 0.15s",
                               }}
                             >
                               <Plus size={12} />
                               Yeni Adres
                             </button>
                           </div>
-                          <div style={{ height: "1px", background: "#f0e8e4", marginBottom: "1.25rem" }} />
+                          <div
+                            style={{
+                              height: "1px",
+                              background: "#f0e8e4",
+                              marginBottom: "1.25rem",
+                            }}
+                          />
                         </div>
                       )}
 
@@ -1171,9 +1489,13 @@ export default function OdemePage() {
                               <span
                                 key={b}
                                 style={{
-                                  fontSize: "0.6rem", fontWeight: "700", color: "#737373",
-                                  background: "#f5f5f5", border: "1px solid #e5e5e5",
-                                  borderRadius: "0.25rem", padding: "0.125rem 0.375rem",
+                                  fontSize: "0.6rem",
+                                  fontWeight: "700",
+                                  color: "#737373",
+                                  background: "#f5f5f5",
+                                  border: "1px solid #e5e5e5",
+                                  borderRadius: "0.25rem",
+                                  padding: "0.125rem 0.375rem",
                                   letterSpacing: "0.04em",
                                 }}
                               >
@@ -1185,40 +1507,125 @@ export default function OdemePage() {
                       }
                     >
                       {/* Payment method selector */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem", marginBottom: "1.5rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.625rem",
+                          marginBottom: "1.5rem",
+                        }}
+                      >
                         {pmCC.enabled && (
                           <label
                             onClick={() => setPayMethod("creditCard")}
                             style={{
-                              display: "flex", alignItems: "center", gap: "0.875rem",
-                              padding: "0.875rem 1rem", borderRadius: "0.875rem", cursor: "pointer",
-                              border: payMethod === "creditCard" ? "1.5px solid #b76e79" : "1.5px solid #f0e8e4",
-                              background: payMethod === "creditCard" ? "#fff5f7" : "#fafafa",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.875rem",
+                              padding: "0.875rem 1rem",
+                              borderRadius: "0.875rem",
+                              cursor: "pointer",
+                              border:
+                                payMethod === "creditCard"
+                                  ? "1.5px solid #b76e79"
+                                  : "1.5px solid #f0e8e4",
+                              background:
+                                payMethod === "creditCard"
+                                  ? "#fff5f7"
+                                  : "#fafafa",
                               transition: "all 0.15s",
                             }}
                           >
-                            <input type="radio" name="payMethod" value="creditCard" checked={payMethod === "creditCard"} onChange={() => setPayMethod("creditCard")} style={{ accentColor: "#b76e79" }} />
-                            <CreditCard size={16} color={payMethod === "creditCard" ? "#b76e79" : "#737373"} />
-                            <span style={{ fontWeight: "600", fontSize: "0.875rem", color: payMethod === "creditCard" ? "#b76e79" : "#2d2d2d" }}>Kredi / Banka Kartı</span>
+                            <input
+                              type="radio"
+                              name="payMethod"
+                              value="creditCard"
+                              checked={payMethod === "creditCard"}
+                              onChange={() => setPayMethod("creditCard")}
+                              style={{ accentColor: "#b76e79" }}
+                            />
+                            <CreditCard
+                              size={16}
+                              color={
+                                payMethod === "creditCard"
+                                  ? "#b76e79"
+                                  : "#737373"
+                              }
+                            />
+                            <span
+                              style={{
+                                fontWeight: "600",
+                                fontSize: "0.875rem",
+                                color:
+                                  payMethod === "creditCard"
+                                    ? "#b76e79"
+                                    : "#2d2d2d",
+                              }}
+                            >
+                              Kredi / Banka Kartı
+                            </span>
                           </label>
                         )}
                         {pmCOD.enabled && (
                           <label
                             onClick={() => setPayMethod("cashOnDelivery")}
                             style={{
-                              display: "flex", alignItems: "center", gap: "0.875rem",
-                              padding: "0.875rem 1rem", borderRadius: "0.875rem", cursor: "pointer",
-                              border: payMethod === "cashOnDelivery" ? "1.5px solid #3d9e6a" : "1.5px solid #f0e8e4",
-                              background: payMethod === "cashOnDelivery" ? "#f0faf4" : "#fafafa",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.875rem",
+                              padding: "0.875rem 1rem",
+                              borderRadius: "0.875rem",
+                              cursor: "pointer",
+                              border:
+                                payMethod === "cashOnDelivery"
+                                  ? "1.5px solid #3d9e6a"
+                                  : "1.5px solid #f0e8e4",
+                              background:
+                                payMethod === "cashOnDelivery"
+                                  ? "#f0faf4"
+                                  : "#fafafa",
                               transition: "all 0.15s",
                             }}
                           >
-                            <input type="radio" name="payMethod" value="cashOnDelivery" checked={payMethod === "cashOnDelivery"} onChange={() => setPayMethod("cashOnDelivery")} style={{ accentColor: "#3d9e6a" }} />
-                            <Package size={16} color={payMethod === "cashOnDelivery" ? "#3d9e6a" : "#737373"} />
+                            <input
+                              type="radio"
+                              name="payMethod"
+                              value="cashOnDelivery"
+                              checked={payMethod === "cashOnDelivery"}
+                              onChange={() => setPayMethod("cashOnDelivery")}
+                              style={{ accentColor: "#3d9e6a" }}
+                            />
+                            <Package
+                              size={16}
+                              color={
+                                payMethod === "cashOnDelivery"
+                                  ? "#3d9e6a"
+                                  : "#737373"
+                              }
+                            />
                             <div style={{ flex: 1 }}>
-                              <span style={{ fontWeight: "600", fontSize: "0.875rem", color: payMethod === "cashOnDelivery" ? "#3d9e6a" : "#2d2d2d" }}>Kapıda Ödeme</span>
+                              <span
+                                style={{
+                                  fontWeight: "600",
+                                  fontSize: "0.875rem",
+                                  color:
+                                    payMethod === "cashOnDelivery"
+                                      ? "#3d9e6a"
+                                      : "#2d2d2d",
+                                }}
+                              >
+                                Kapıda Ödeme
+                              </span>
                               {pmCOD.fee > 0 && (
-                                <span style={{ fontSize: "0.75rem", color: "#737373", marginLeft: "0.5rem" }}>+₺{pmCOD.fee} hizmet bedeli</span>
+                                <span
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "#737373",
+                                    marginLeft: "0.5rem",
+                                  }}
+                                >
+                                  +₺{pmCOD.fee} hizmet bedeli
+                                </span>
                               )}
                             </div>
                           </label>
@@ -1227,82 +1634,233 @@ export default function OdemePage() {
                           <label
                             onClick={() => setPayMethod("bankTransfer")}
                             style={{
-                              display: "flex", alignItems: "center", gap: "0.875rem",
-                              padding: "0.875rem 1rem", borderRadius: "0.875rem", cursor: "pointer",
-                              border: payMethod === "bankTransfer" ? "1.5px solid #c4a265" : "1.5px solid #f0e8e4",
-                              background: payMethod === "bankTransfer" ? "#fffbf0" : "#fafafa",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.875rem",
+                              padding: "0.875rem 1rem",
+                              borderRadius: "0.875rem",
+                              cursor: "pointer",
+                              border:
+                                payMethod === "bankTransfer"
+                                  ? "1.5px solid #c4a265"
+                                  : "1.5px solid #f0e8e4",
+                              background:
+                                payMethod === "bankTransfer"
+                                  ? "#fffbf0"
+                                  : "#fafafa",
                               transition: "all 0.15s",
                             }}
                           >
-                            <input type="radio" name="payMethod" value="bankTransfer" checked={payMethod === "bankTransfer"} onChange={() => setPayMethod("bankTransfer")} style={{ accentColor: "#c4a265" }} />
-                            <CreditCard size={16} color={payMethod === "bankTransfer" ? "#c4a265" : "#737373"} />
-                            <span style={{ fontWeight: "600", fontSize: "0.875rem", color: payMethod === "bankTransfer" ? "#c4a265" : "#2d2d2d" }}>Havale / EFT</span>
+                            <input
+                              type="radio"
+                              name="payMethod"
+                              value="bankTransfer"
+                              checked={payMethod === "bankTransfer"}
+                              onChange={() => setPayMethod("bankTransfer")}
+                              style={{ accentColor: "#c4a265" }}
+                            />
+                            <CreditCard
+                              size={16}
+                              color={
+                                payMethod === "bankTransfer"
+                                  ? "#c4a265"
+                                  : "#737373"
+                              }
+                            />
+                            <span
+                              style={{
+                                fontWeight: "600",
+                                fontSize: "0.875rem",
+                                color:
+                                  payMethod === "bankTransfer"
+                                    ? "#c4a265"
+                                    : "#2d2d2d",
+                              }}
+                            >
+                              Havale / EFT
+                            </span>
                           </label>
                         )}
                       </div>
 
                       {/* Credit card form */}
                       {payMethod === "creditCard" && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "1rem",
+                          }}
+                        >
                           <GBInput
-                            label="Kart Üzerindeki İsim" name="holder" value={card.holder}
-                            onChange={(e) => setC("holder", e.target.value.toUpperCase())}
-                            error={cErr.holder} autoComplete="cc-name" icon={<User size={15} />}
+                            label="Kart Üzerindeki İsim"
+                            name="holder"
+                            value={card.holder}
+                            onChange={(e) =>
+                              setC("holder", e.target.value.toUpperCase())
+                            }
+                            error={cErr.holder}
+                            autoComplete="cc-name"
+                            icon={<User size={15} />}
                           />
                           <GBInput
-                            label="Kart Numarası" name="cardnumber" value={card.number}
-                            onChange={(e) => setC("number", formatCardNumber(e.target.value))}
-                            error={cErr.number} autoComplete="cc-number"
-                            icon={<CreditCard size={15} />} placeholder="0000 0000 0000 0000" maxLength={19}
+                            label="Kart Numarası"
+                            name="cardnumber"
+                            value={card.number}
+                            onChange={(e) =>
+                              setC("number", formatCardNumber(e.target.value))
+                            }
+                            error={cErr.number}
+                            autoComplete="cc-number"
+                            icon={<CreditCard size={15} />}
+                            placeholder="0000 0000 0000 0000"
+                            maxLength={19}
                           />
-                          <div className="odeme-field-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+                          <div
+                            className="odeme-field-grid-2"
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr",
+                              gap: "1rem",
+                            }}
+                          >
                             <GBInput
-                              label="Son Kullanma (AA/YY)" name="expiry" value={card.expiry}
-                              onChange={(e) => setC("expiry", formatExpiry(e.target.value))}
-                              error={cErr.expiry} autoComplete="cc-exp" placeholder="AA / YY" maxLength={5}
+                              label="Son Kullanma (AA/YY)"
+                              name="expiry"
+                              value={card.expiry}
+                              onChange={(e) =>
+                                setC("expiry", formatExpiry(e.target.value))
+                              }
+                              error={cErr.expiry}
+                              autoComplete="cc-exp"
+                              placeholder="AA / YY"
+                              maxLength={5}
                             />
                             <GBInput
-                              label="CVV" name="cvv" type="password" value={card.cvv}
-                              onChange={(e) => setC("cvv", e.target.value.replace(/\D/g, "").slice(0, 4))}
-                              error={cErr.cvv} autoComplete="cc-csc" placeholder="•••" maxLength={4} icon={<Lock size={15} />}
+                              label="CVV"
+                              name="cvv"
+                              type="password"
+                              value={card.cvv}
+                              onChange={(e) =>
+                                setC(
+                                  "cvv",
+                                  e.target.value.replace(/\D/g, "").slice(0, 4),
+                                )
+                              }
+                              error={cErr.cvv}
+                              autoComplete="cc-csc"
+                              placeholder="•••"
+                              maxLength={4}
+                              icon={<Lock size={15} />}
                             />
                           </div>
-                          
+
                           {/* 3D Secure Option */}
-                          <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "1rem", background: "#f0f9ff", border: "1px solid #bae6fd", borderRadius: "0.75rem", cursor: "pointer" }}>
-                            <input 
-                              type="checkbox" 
-                              checked={use3DSecure} 
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.75rem",
+                              padding: "1rem",
+                              background: "#f0f9ff",
+                              border: "1px solid #bae6fd",
+                              borderRadius: "0.75rem",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={use3DSecure}
                               onChange={(e) => setUse3DSecure(e.target.checked)}
-                              style={{ accentColor: "#b76e79", width: "18px", height: "18px", cursor: "pointer" }}
+                              style={{
+                                accentColor: "#b76e79",
+                                width: "18px",
+                                height: "18px",
+                                cursor: "pointer",
+                              }}
                             />
                             <div style={{ flex: 1 }}>
-                              <span style={{ fontWeight: "600", fontSize: "0.875rem", color: "#2d2d2d" }}>3D Secure ile Ödeme Yap</span>
-                              <p style={{ fontSize: "0.75rem", color: "#737373", marginTop: "0.25rem" }}>
+                              <span
+                                style={{
+                                  fontWeight: "600",
+                                  fontSize: "0.875rem",
+                                  color: "#2d2d2d",
+                                }}
+                              >
+                                3D Secure ile Ödeme Yap
+                              </span>
+                              <p
+                                style={{
+                                  fontSize: "0.75rem",
+                                  color: "#737373",
+                                  marginTop: "0.25rem",
+                                }}
+                              >
                                 Ödemenizi doğrulayın ve daha güvenli işlem yapın
                               </p>
                             </div>
                           </label>
 
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1rem", background: "#f6fdf6", border: "1px solid #dcf0dc", borderRadius: "0.75rem" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.75rem 1rem",
+                              background: "#f6fdf6",
+                              border: "1px solid #dcf0dc",
+                              borderRadius: "0.75rem",
+                            }}
+                          >
                             <ShieldCheck size={14} color="#22c55e" />
-                            <span style={{ fontSize: "0.75rem", color: "#525252" }}>Kart bilgileriniz 256‑bit SSL ile şifrelenmektedir.</span>
+                            <span
+                              style={{ fontSize: "0.75rem", color: "#525252" }}
+                            >
+                              Kart bilgileriniz 256‑bit SSL ile
+                              şifrelenmektedir.
+                            </span>
                           </div>
                         </div>
                       )}
 
                       {/* Cash on delivery info */}
                       {payMethod === "cashOnDelivery" && (
-                        <div style={{ padding: "1rem", background: "#f0faf4", border: "1px solid #c8ecd8", borderRadius: "0.75rem" }}>
-                          <p style={{ fontSize: "0.8125rem", color: "#2d5c3e", fontWeight: "600", marginBottom: "0.375rem" }}>Kapıda Ödeme Seçildi</p>
+                        <div
+                          style={{
+                            padding: "1rem",
+                            background: "#f0faf4",
+                            border: "1px solid #c8ecd8",
+                            borderRadius: "0.75rem",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "0.8125rem",
+                              color: "#2d5c3e",
+                              fontWeight: "600",
+                              marginBottom: "0.375rem",
+                            }}
+                          >
+                            Kapıda Ödeme Seçildi
+                          </p>
                           <p style={{ fontSize: "0.75rem", color: "#4a7c5e" }}>
-                            Siparişiniz teslim edildiğinde nakit veya kart ile ödeme yapabilirsiniz.
+                            Siparişiniz teslim edildiğinde nakit veya kart ile
+                            ödeme yapabilirsiniz.
                             {pmCOD.fee > 0 && ` Hizmet bedeli: ₺${pmCOD.fee}`}
                           </p>
                           {activeCarrier && (
-                            <p style={{ fontSize: "0.75rem", color: "#4a7c5e", marginTop: "0.25rem" }}>
-                              Kargo firması: <strong>{activeCarrier.name}</strong>
-                              {activeCarrier.estimatedDays ? ` · ${activeCarrier.estimatedDays} iş günü` : ""}
+                            <p
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "#4a7c5e",
+                                marginTop: "0.25rem",
+                              }}
+                            >
+                              Kargo firması:{" "}
+                              <strong>{activeCarrier.name}</strong>
+                              {activeCarrier.estimatedDays
+                                ? ` · ${activeCarrier.estimatedDays} iş günü`
+                                : ""}
                             </p>
                           )}
                         </div>
@@ -1310,17 +1868,65 @@ export default function OdemePage() {
 
                       {/* Bank transfer info */}
                       {payMethod === "bankTransfer" && pmBT.enabled && (
-                        <div style={{ padding: "1rem", background: "#fffbf0", border: "1px solid #f0e0b0", borderRadius: "0.75rem" }}>
-                          <p style={{ fontSize: "0.8125rem", color: "#6b5a2e", fontWeight: "600", marginBottom: "0.5rem" }}>Havale / EFT Bilgileri</p>
-                          {pmBT.bankName && <p style={{ fontSize: "0.75rem", color: "#6b5a2e" }}>Banka: <strong>{pmBT.bankName}</strong></p>}
-                          {pmBT.accountHolder && <p style={{ fontSize: "0.75rem", color: "#6b5a2e", marginTop: "0.25rem" }}>Hesap Sahibi: <strong>{pmBT.accountHolder}</strong></p>}
+                        <div
+                          style={{
+                            padding: "1rem",
+                            background: "#fffbf0",
+                            border: "1px solid #f0e0b0",
+                            borderRadius: "0.75rem",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "0.8125rem",
+                              color: "#6b5a2e",
+                              fontWeight: "600",
+                              marginBottom: "0.5rem",
+                            }}
+                          >
+                            Havale / EFT Bilgileri
+                          </p>
+                          {pmBT.bankName && (
+                            <p
+                              style={{ fontSize: "0.75rem", color: "#6b5a2e" }}
+                            >
+                              Banka: <strong>{pmBT.bankName}</strong>
+                            </p>
+                          )}
+                          {pmBT.accountHolder && (
+                            <p
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "#6b5a2e",
+                                marginTop: "0.25rem",
+                              }}
+                            >
+                              Hesap Sahibi:{" "}
+                              <strong>{pmBT.accountHolder}</strong>
+                            </p>
+                          )}
                           {pmBT.iban && (
-                            <p style={{ fontSize: "0.75rem", color: "#6b5a2e", marginTop: "0.25rem", fontFamily: "monospace", letterSpacing: "0.04em" }}>
+                            <p
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "#6b5a2e",
+                                marginTop: "0.25rem",
+                                fontFamily: "monospace",
+                                letterSpacing: "0.04em",
+                              }}
+                            >
                               IBAN: <strong>{pmBT.iban}</strong>
                             </p>
                           )}
-                          <p style={{ fontSize: "0.7rem", color: "#a08030", marginTop: "0.5rem" }}>
-                            Havale/EFT açıklamasına ad soyadınızı ve telefon numaranızı yazmayı unutmayın.
+                          <p
+                            style={{
+                              fontSize: "0.7rem",
+                              color: "#a08030",
+                              marginTop: "0.5rem",
+                            }}
+                          >
+                            Havale/EFT açıklamasına ad soyadınızı ve telefon
+                            numaranızı yazmayı unutmayın.
                           </p>
                         </div>
                       )}
@@ -1330,97 +1936,272 @@ export default function OdemePage() {
                   {/* ── Legal Consents Section ── */}
                   <div id="legal-section">
                     <SectionCard icon={FileText} title="Sözleşmeler ve Onaylar">
-                      <p style={{ fontSize: "0.75rem", color: "#737373", lineHeight: "1.6", marginBottom: "1.25rem" }}>
-                        Siparişi tamamlamadan önce lütfen aşağıdaki belgeleri okuyarak onayınızı verin.
+                      <p
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#737373",
+                          lineHeight: "1.6",
+                          marginBottom: "1.25rem",
+                        }}
+                      >
+                        Siparişi tamamlamadan önce lütfen aşağıdaki belgeleri
+                        okuyarak onayınızı verin.
                       </p>
 
                       {/* Ön Bilgilendirme */}
-                      <label style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.875rem", cursor: "pointer" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          gap: "0.75rem",
+                          alignItems: "flex-start",
+                          marginBottom: "0.875rem",
+                          cursor: "pointer",
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={consents.bilgilendirme}
-                          onChange={(e) => setConsents((c) => ({ ...c, bilgilendirme: e.target.checked }))}
-                          style={{ accentColor: "#b76e79", marginTop: "0.2rem", flexShrink: 0, width: "1.0625rem", height: "1.0625rem" }}
+                          onChange={(e) =>
+                            setConsents((c) => ({
+                              ...c,
+                              bilgilendirme: e.target.checked,
+                            }))
+                          }
+                          style={{
+                            accentColor: "#b76e79",
+                            marginTop: "0.2rem",
+                            flexShrink: 0,
+                            width: "1.0625rem",
+                            height: "1.0625rem",
+                          }}
                         />
-                        <span style={{ fontSize: "0.8125rem", color: "#2d2d2d", lineHeight: "1.55" }}>
+                        <span
+                          style={{
+                            fontSize: "0.8125rem",
+                            color: "#2d2d2d",
+                            lineHeight: "1.55",
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => setLegalModal("bilgilendirme")}
-                            style={{ color: "#b76e79", fontWeight: "700", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline", fontSize: "inherit" }}
+                            style={{
+                              color: "#b76e79",
+                              fontWeight: "700",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              textDecoration: "underline",
+                              fontSize: "inherit",
+                            }}
                           >
                             Ön Bilgilendirme Formu
                           </button>
                           {"'nu okudum, anladım ve onaylıyorum. "}
-                          <span style={{ color: "#ef4444", fontWeight: "700" }}>*</span>
+                          <span style={{ color: "#ef4444", fontWeight: "700" }}>
+                            *
+                          </span>
                         </span>
                       </label>
 
                       {/* Mesafeli Satış Sözleşmesi */}
-                      <label style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.875rem", cursor: "pointer" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          gap: "0.75rem",
+                          alignItems: "flex-start",
+                          marginBottom: "0.875rem",
+                          cursor: "pointer",
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={consents.sozlesme}
-                          onChange={(e) => setConsents((c) => ({ ...c, sozlesme: e.target.checked }))}
-                          style={{ accentColor: "#b76e79", marginTop: "0.2rem", flexShrink: 0, width: "1.0625rem", height: "1.0625rem" }}
+                          onChange={(e) =>
+                            setConsents((c) => ({
+                              ...c,
+                              sozlesme: e.target.checked,
+                            }))
+                          }
+                          style={{
+                            accentColor: "#b76e79",
+                            marginTop: "0.2rem",
+                            flexShrink: 0,
+                            width: "1.0625rem",
+                            height: "1.0625rem",
+                          }}
                         />
-                        <span style={{ fontSize: "0.8125rem", color: "#2d2d2d", lineHeight: "1.55" }}>
+                        <span
+                          style={{
+                            fontSize: "0.8125rem",
+                            color: "#2d2d2d",
+                            lineHeight: "1.55",
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => setLegalModal("sozlesme")}
-                            style={{ color: "#b76e79", fontWeight: "700", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline", fontSize: "inherit" }}
+                            style={{
+                              color: "#b76e79",
+                              fontWeight: "700",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              textDecoration: "underline",
+                              fontSize: "inherit",
+                            }}
                           >
                             Mesafeli Satış Sözleşmesi
                           </button>
                           {"'ni okudum, anladım ve onaylıyorum. "}
-                          <span style={{ color: "#ef4444", fontWeight: "700" }}>*</span>
+                          <span style={{ color: "#ef4444", fontWeight: "700" }}>
+                            *
+                          </span>
                         </span>
                       </label>
 
                       {/* KVKK */}
-                      <label style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", marginBottom: "0.875rem", cursor: "pointer" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          gap: "0.75rem",
+                          alignItems: "flex-start",
+                          marginBottom: "0.875rem",
+                          cursor: "pointer",
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={consents.kvkk}
-                          onChange={(e) => setConsents((c) => ({ ...c, kvkk: e.target.checked }))}
-                          style={{ accentColor: "#b76e79", marginTop: "0.2rem", flexShrink: 0, width: "1.0625rem", height: "1.0625rem" }}
+                          onChange={(e) =>
+                            setConsents((c) => ({
+                              ...c,
+                              kvkk: e.target.checked,
+                            }))
+                          }
+                          style={{
+                            accentColor: "#b76e79",
+                            marginTop: "0.2rem",
+                            flexShrink: 0,
+                            width: "1.0625rem",
+                            height: "1.0625rem",
+                          }}
                         />
-                        <span style={{ fontSize: "0.8125rem", color: "#2d2d2d", lineHeight: "1.55" }}>
+                        <span
+                          style={{
+                            fontSize: "0.8125rem",
+                            color: "#2d2d2d",
+                            lineHeight: "1.55",
+                          }}
+                        >
                           <button
                             type="button"
                             onClick={() => setLegalModal("kvkk")}
-                            style={{ color: "#b76e79", fontWeight: "700", background: "none", border: "none", cursor: "pointer", padding: 0, textDecoration: "underline", fontSize: "inherit" }}
+                            style={{
+                              color: "#b76e79",
+                              fontWeight: "700",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: 0,
+                              textDecoration: "underline",
+                              fontSize: "inherit",
+                            }}
                           >
                             KVKK Aydınlatma Metni
                           </button>
-                          {"'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum. "}
-                          <span style={{ color: "#ef4444", fontWeight: "700" }}>*</span>
+                          {
+                            "'ni okudum, kişisel verilerimin işlenmesini kabul ediyorum. "
+                          }
+                          <span style={{ color: "#ef4444", fontWeight: "700" }}>
+                            *
+                          </span>
                         </span>
                       </label>
 
                       {/* Pazarlama (isteğe bağlı) */}
-                      <label style={{ display: "flex", gap: "0.75rem", alignItems: "flex-start", cursor: "pointer" }}>
+                      <label
+                        style={{
+                          display: "flex",
+                          gap: "0.75rem",
+                          alignItems: "flex-start",
+                          cursor: "pointer",
+                        }}
+                      >
                         <input
                           type="checkbox"
                           checked={consents.pazarlama}
-                          onChange={(e) => setConsents((c) => ({ ...c, pazarlama: e.target.checked }))}
-                          style={{ accentColor: "#b76e79", marginTop: "0.2rem", flexShrink: 0, width: "1.0625rem", height: "1.0625rem" }}
+                          onChange={(e) =>
+                            setConsents((c) => ({
+                              ...c,
+                              pazarlama: e.target.checked,
+                            }))
+                          }
+                          style={{
+                            accentColor: "#b76e79",
+                            marginTop: "0.2rem",
+                            flexShrink: 0,
+                            width: "1.0625rem",
+                            height: "1.0625rem",
+                          }}
                         />
-                        <span style={{ fontSize: "0.8125rem", color: "#525252", lineHeight: "1.55" }}>
-                          Kampanya, yeni ürün ve fırsatlardan e-posta/SMS ile haberdar olmak istiyorum.
-                          <span style={{ color: "#a3a3a3", fontSize: "0.75rem", marginLeft: "0.25rem" }}>(İsteğe bağlı)</span>
+                        <span
+                          style={{
+                            fontSize: "0.8125rem",
+                            color: "#525252",
+                            lineHeight: "1.55",
+                          }}
+                        >
+                          Kampanya, yeni ürün ve fırsatlardan e-posta/SMS ile
+                          haberdar olmak istiyorum.
+                          <span
+                            style={{
+                              color: "#a3a3a3",
+                              fontSize: "0.75rem",
+                              marginLeft: "0.25rem",
+                            }}
+                          >
+                            (İsteğe bağlı)
+                          </span>
                         </span>
                       </label>
 
                       {consentError && (
-                        <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "#fff0f0", border: "1px solid #fcd5d5", borderRadius: "0.75rem" }}>
-                          <p style={{ fontSize: "0.8125rem", color: "#dc2626", fontWeight: "600" }}>
+                        <div
+                          style={{
+                            marginTop: "1rem",
+                            padding: "0.75rem 1rem",
+                            background: "#fff0f0",
+                            border: "1px solid #fcd5d5",
+                            borderRadius: "0.75rem",
+                          }}
+                        >
+                          <p
+                            style={{
+                              fontSize: "0.8125rem",
+                              color: "#dc2626",
+                              fontWeight: "600",
+                            }}
+                          >
                             {consentError}
                           </p>
                         </div>
                       )}
 
-                      <p style={{ fontSize: "0.6875rem", color: "#a3a3a3", marginTop: "1rem", lineHeight: "1.5" }}>
-                        <span style={{ color: "#ef4444", fontWeight: "700" }}>*</span> ile işaretli onaylar zorunludur.
+                      <p
+                        style={{
+                          fontSize: "0.6875rem",
+                          color: "#a3a3a3",
+                          marginTop: "1rem",
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        <span style={{ color: "#ef4444", fontWeight: "700" }}>
+                          *
+                        </span>{" "}
+                        ile işaretli onaylar zorunludur.
                       </p>
                     </SectionCard>
                   </div>
@@ -1467,8 +2248,7 @@ export default function OdemePage() {
                       style={{
                         width: "2rem",
                         height: "2rem",
-                        background:
-                          "linear-gradient(135deg, #b76e79, #e890a8)",
+                        background: "linear-gradient(135deg, #b76e79, #e890a8)",
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
@@ -1523,6 +2303,7 @@ export default function OdemePage() {
                       >
                         <div
                           style={{
+                            position: "relative",
                             width: "3.5rem",
                             height: "3.5rem",
                             background: "#f8f5f2",
@@ -1532,12 +2313,12 @@ export default function OdemePage() {
                           }}
                         >
                           {item.images?.[0] ? (
-                            <img
+                            <Image
                               src={item.images[0]}
                               alt={item.name}
+                              fill
+                              sizes="56px"
                               style={{
-                                width: "100%",
-                                height: "100%",
                                 objectFit: "cover",
                               }}
                             />
@@ -1568,9 +2349,7 @@ export default function OdemePage() {
                           >
                             {item.name}
                           </p>
-                          <p
-                            style={{ fontSize: "0.75rem", color: "#737373" }}
-                          >
+                          <p style={{ fontSize: "0.75rem", color: "#737373" }}>
                             x{item.qty}
                           </p>
                         </div>
@@ -1620,6 +2399,28 @@ export default function OdemePage() {
                         ₺{subtotal.toFixed(2)}
                       </span>
                     </div>
+                    {/* Discount breakdown */}
+                    {discountBreakdown.map((item, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <span style={{ color: "#16a34a", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                          {item.type === "cart_coupon" && <Tag size={11} />}
+                          {item.type === "product" && <Percent size={11} />}
+                          {item.type === "bxgy" && <Gift size={11} />}
+                          {item.type === "threshold" && <Zap size={11} />}
+                          {item.label}
+                        </span>
+                        <span style={{ fontWeight: "600", color: "#16a34a" }}>
+                          −₺{item.amount.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
                     <div
                       style={{
                         display: "flex",
@@ -1627,7 +2428,9 @@ export default function OdemePage() {
                         fontSize: "0.875rem",
                       }}
                     >
-                      <span style={{ color: "#737373" }}>Kargo{activeCarrier ? ` (${activeCarrier.name})` : ""}</span>
+                      <span style={{ color: "#737373" }}>
+                        Kargo{activeCarrier ? ` (${activeCarrier.name})` : ""}
+                      </span>
                       <span
                         style={{
                           fontWeight: "600",
@@ -1641,9 +2444,19 @@ export default function OdemePage() {
                     </div>
 
                     {codFee > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.875rem" }}>
-                        <span style={{ color: "#737373" }}>Kapıda Ödeme Bedeli</span>
-                        <span style={{ fontWeight: "600" }}>₺{codFee.toFixed(2)}</span>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        <span style={{ color: "#737373" }}>
+                          Kapıda Ödeme Bedeli
+                        </span>
+                        <span style={{ fontWeight: "600" }}>
+                          ₺{codFee.toFixed(2)}
+                        </span>
                       </div>
                     )}
 
@@ -1723,6 +2536,28 @@ export default function OdemePage() {
                   >
                     ← Sepete Dön
                   </Link>
+
+                  {/* iyzico güven rozetleri */}
+                  <div
+                    style={{
+                      marginTop: "1.25rem",
+                      paddingTop: "1.25rem",
+                      borderTop: "1px solid #f0e8e4",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "0.625rem",
+                    }}
+                  >
+               
+                    <Image
+                      src="/logo_band_colored@1X.png"
+                      alt="Visa Mastercard Troy"
+                      width={144}
+                      height={22}
+                      style={{ height: "22px", width: "auto" }}
+                    />
+                  </div>
                 </div>
               </motion.form>
             )}
@@ -1732,7 +2567,9 @@ export default function OdemePage() {
 
       <Footer />
 
-      {legalModal && <LegalModal modalKey={legalModal} onClose={() => setLegalModal(null)} />}
+      {legalModal && (
+        <LegalModal modalKey={legalModal} onClose={() => setLegalModal(null)} />
+      )}
 
       <style>{`
         @media (min-width: 900px) {

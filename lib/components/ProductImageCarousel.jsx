@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -19,7 +20,12 @@ const slideVariants = {
   }),
 };
 
-export default function ProductImageCarousel({ images = [], gradient, badge, alt }) {
+export default function ProductImageCarousel({
+  images = [],
+  gradient,
+  badge,
+  alt,
+}) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(0);
   const touchStartX = useRef(null);
@@ -86,12 +92,13 @@ export default function ProductImageCarousel({ images = [], gradient, badge, alt
               inset: 0,
             }}
           >
-            <img
+            <Image
               src={images[current]}
               alt={alt || ""}
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 50vw"
               style={{
-                width: "100%",
-                height: "100%",
                 objectFit: "cover",
                 objectPosition: "center",
                 pointerEvents: "none",
@@ -224,11 +231,15 @@ export default function ProductImageCarousel({ images = [], gradient, badge, alt
               aria-label={`Görsel ${i + 1}`}
               onClick={() => goTo(i, i > current ? 1 : -1)}
               style={{
+                position: "relative",
                 width: "3.75rem",
                 height: "3.75rem",
                 borderRadius: "0.75rem",
                 overflow: "hidden",
-                border: i === current ? "2.5px solid #b76e79" : "2.5px solid transparent",
+                border:
+                  i === current
+                    ? "2.5px solid #b76e79"
+                    : "2.5px solid transparent",
                 outline: "none",
                 background: gradient,
                 padding: 0,
@@ -236,18 +247,16 @@ export default function ProductImageCarousel({ images = [], gradient, badge, alt
                 flexShrink: 0,
                 transition: "border-color 0.2s, box-shadow 0.2s",
                 boxShadow:
-                  i === current
-                    ? "0 0 0 3px rgba(183,110,121,0.2)"
-                    : "none",
+                  i === current ? "0 0 0 3px rgba(183,110,121,0.2)" : "none",
               }}
             >
-              <img
+              <Image
                 src={img}
                 alt=""
+                fill
                 draggable={false}
+                sizes="10vw"
                 style={{
-                  width: "100%",
-                  height: "100%",
                   objectFit: "contain",
                   pointerEvents: "none",
                 }}

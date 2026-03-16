@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, ArrowRight, Sparkles, Trash2, ShoppingBag, ChevronRight } from "lucide-react";
 import { getProducts } from "@/lib/firebase/firestore";
@@ -275,15 +276,15 @@ function FavCard({ product, index, onRemove, onAddToCart, inCart }) {
         </motion.button>
 
         {/* Product image */}
-        <div style={{ width: '72%', height: '92%', flexShrink: 0 }}>
+        <div style={{ position: 'relative', width: '72%', height: '92%', flexShrink: 0 }}>
           {product.images?.[0] ? (
-            <img
+            <Image
               src={product.images[0]}
               alt={product.name}
+              fill
               draggable={false}
+              sizes="(max-width: 640px) 55vw, 25vw"
               style={{
-                width: '100%',
-                height: '100%',
                 objectFit: 'contain',
                 objectPosition: 'bottom',
                 pointerEvents: 'none',

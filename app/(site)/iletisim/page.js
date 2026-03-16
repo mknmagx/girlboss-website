@@ -9,6 +9,7 @@ import GBButton from "@/lib/components/ui/GBButton";
 import GBInput from "@/lib/components/ui/GBInput";
 import GBTextarea from "@/lib/components/ui/GBTextarea";
 import GBSelect from "@/lib/components/ui/GBSelect";
+import { company } from "@/lib/config/company";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -22,8 +23,33 @@ export default function IletisimPage() {
   const [form, setForm] = useState({ ad: '', email: '', konu: '', mesaj: '' });
   const set = (k) => (v) => setForm({ ...form, [k]: typeof v === 'string' ? v : v.target.value });
 
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": "ContactPage",
+    name: "GIRLBOSS İletişim",
+    url: `https://${company.domain}/iletisim`,
+    description: `${company.brandName} müşteri hizmetleri ile iletişime geçin.`,
+    mainEntity: {
+      "@type": "Organization",
+      name: company.brandName,
+      telephone: company.phone,
+      email: company.email,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Yakuplu Mah. Dereboyu Cad. No:4/1",
+        addressLocality: "Beylikdüzü",
+        addressRegion: "İstanbul",
+        addressCountry: "TR",
+      },
+    },
+  };
+
   return (
     <div className="bg-[#fdf8f5] text-[#2d2d2d] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(contactSchema) }}
+      />
       <Navbar />
 
       {/* Hero */}
@@ -55,10 +81,10 @@ export default function IletisimPage() {
               <h2 className="text-xl sm:text-2xl font-extrabold text-[#2d2d2d] mb-4 sm:mb-6">İletişim Bilgileri</h2>
               <div className="flex flex-col gap-4 sm:gap-6">
                 {[
-                  { icon: <MapPin size={20} />, label: "Adres", value: "Nişantaşı, Teşvikiye Cad.\nNo: 42, Şişli / İstanbul" },
-                  { icon: <Phone size={20} />, label: "Telefon", value: "+90 555 123 4567" },
-                  { icon: <Mail size={20} />, label: "E-posta", value: "info@girlboss.com" },
-                  { icon: <Clock size={20} />, label: "Çalışma Saatleri", value: "Pzt - Cum: 09:00 - 18:00\nCmt: 10:00 - 14:00" },
+                  { icon: <MapPin size={20} />, label: "Adres", value: company.address },
+                  { icon: <Phone size={20} />, label: "Telefon", value: company.phone },
+                  { icon: <Mail size={20} />, label: "E-posta", value: company.email },
+                  { icon: <Clock size={20} />, label: "Çalışma Saatleri", value: company.workingHours },
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-3 sm:gap-4">
                     <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-[#b76e79]/10 text-[#b76e79] flex items-center justify-center shrink-0">

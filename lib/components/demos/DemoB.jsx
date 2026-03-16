@@ -41,10 +41,10 @@ function NavbarLight() {
       <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="text-2xl tracking-[0.35em] text-[#2d2d2d] cursor-pointer"
-          style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+          className="flex items-center gap-2.5 cursor-pointer"
         >
-          {brand.name}
+          <img src="/icon.png" alt="GIRLBOSS" className="h-10 w-auto" />
+          <span className="text-lg tracking-[0.25em] text-[#2d2d2d]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{brand.name}</span>
         </motion.div>
 
         <div className="hidden md:flex items-center gap-10">
@@ -400,11 +400,9 @@ function FooterLight() {
     <footer className="py-12 bg-white border-t border-[#f0e8e4]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div
-            className="text-xl tracking-[0.35em] text-[#2d2d2d]"
-            style={{ fontFamily: "Georgia, serif" }}
-          >
-            {brand.name}
+          <div className="flex items-center gap-2.5">
+            <img src="/icon.png" alt="GIRLBOSS" className="h-8 w-auto" />
+            <span className="text-lg tracking-[0.25em] text-[#2d2d2d]" style={{ fontFamily: "Georgia, serif" }}>{brand.name}</span>
           </div>
           <div className="flex gap-8">
             {["Ürünler", "Hakkımızda", "İletişim", "Gizlilik"].map((item) => (

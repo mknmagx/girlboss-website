@@ -5,18 +5,19 @@ import { usePathname } from "next/navigation";
 import { useAdmin } from "@/lib/hooks/useAdmin";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, BarChart3,
-  Settings, FileText, ChevronLeft, ChevronRight, Sparkles, Plus,
+  Settings, FileText, ChevronLeft, ChevronRight, Sparkles, Plus, BadgePercent,
 } from "lucide-react";
 import { useState } from "react";
 
 const menuItems = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard, section: "dashboard" },
-  { label: "Ürünler", href: "/admin/urunler", icon: Package, section: "products" },
-  { label: "Siparişler", href: "/admin/siparisler", icon: ShoppingCart, section: "orders", action: { href: "/admin/siparisler/yeni", title: "Yeni Sipariş" } },
-  { label: "Kullanıcılar", href: "/admin/kullanicilar", icon: Users, section: "users" },
-  { label: "Stok", href: "/admin/stok", icon: BarChart3, section: "stock" },
-  { label: "Blog", href: "/admin/blog", icon: FileText, section: "blog" },
-  { label: "Ayarlar", href: "/admin/ayarlar", icon: Settings, section: "settings" },
+  { label: "Dashboard",  href: "/admin",             icon: LayoutDashboard, section: "dashboard" },
+  { label: "Ürünler",    href: "/admin/urunler",     icon: Package,         section: "products" },
+  { label: "Siparişler", href: "/admin/siparisler",  icon: ShoppingCart,    section: "orders",   action: { href: "/admin/siparisler/yeni", title: "Yeni Sipariş" } },
+  { label: "Kullanıcılar",href: "/admin/kullanicilar",icon: Users,          section: "users" },
+  { label: "Stok",       href: "/admin/stok",        icon: BarChart3,       section: "stock" },
+  { label: "İndirimler", href: "/admin/indirimler",  icon: BadgePercent,    section: "discounts" },
+  { label: "Blog",       href: "/admin/blog",        icon: FileText,        section: "blog" },
+  { label: "Ayarlar",    href: "/admin/ayarlar",     icon: Settings,        section: "settings" },
 ];
 
 export default function AdminSidebar() {
@@ -35,15 +36,14 @@ export default function AdminSidebar() {
       style={{ width: collapsed ? "4.5rem" : "16rem" }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-4 h-16 border-b border-[#f0e8e4]">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-          style={{ background: "linear-gradient(135deg, #b76e79, #e890a8)" }}>
-          <Sparkles size={13} className="text-white" />
-        </div>
+      <div className="flex items-center gap-2 px-4 h-16 border-b border-[#f0e8e4]">
+        <img
+          src="/icon.png"
+          alt="GIRLBOSS"
+          className={collapsed ? "h-7 w-auto" : "h-8 w-auto"}
+        />
         {!collapsed && (
-          <span className="text-sm font-bold tracking-[0.15em] text-[#2d2d2d]">
-            GIRLBOSS <span className="text-[10px] font-medium text-[#b76e79] tracking-normal">Admin</span>
-          </span>
+          <span className="text-[10px] font-medium text-[#b76e79] tracking-normal">Admin</span>
         )}
       </div>
 

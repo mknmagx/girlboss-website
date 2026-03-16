@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 
 /* ─── Note pill positions ───────────────────── */
@@ -49,15 +50,19 @@ function ProductReelScene({ product }) {
           animate={{ y: [0, -13, 0] }}
           transition={{ duration: 3.9, repeat: Infinity, ease: "easeInOut" }}
         >
-          <img
+          <Image
             src={product.image}
             alt={product.name}
+            width={300}
+            height={480}
+            sizes="(max-width: 768px) 50vw, 25vw"
             style={{
               height: "clamp(200px, 38vh, 480px)",
               width: "auto",
               maxWidth: "unset",
               objectFit: "contain",
-              filter: `drop-shadow(0 22px 50px ${product.color}60) drop-shadow(0 8px 20px rgba(0,0,0,0.14))`,              userSelect: "none",
+              filter: `drop-shadow(0 22px 50px ${product.color}60) drop-shadow(0 8px 20px rgba(0,0,0,0.14))`,
+              userSelect: "none",
               pointerEvents: "none",
             }}
           />

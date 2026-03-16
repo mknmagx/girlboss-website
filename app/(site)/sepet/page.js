@@ -1,15 +1,19 @@
 "use client";
 
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Package, Tag } from "lucide-react";
-import { useState, useEffect } from "react";
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ShieldCheck, Package, Tag, Percent, Gift, Zap } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { useCart } from "@/lib/hooks/useCart";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { useDiscounts } from "@/lib/hooks/useDiscounts";
+import PromoBanners from "@/lib/components/PromoBanners";
 import Navbar from "@/lib/components/Navbar";
 import Footer from "@/lib/components/Footer";
 import Link from "next/link";
 import GBButton from "@/lib/components/ui/GBButton";
 import GBInput from "@/lib/components/ui/GBInput";
-import { getSettings } from "@/lib/firebase/firestore";
+import { getSettings, getOrdersByUser } from "@/lib/firebase/firestore";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -20,28 +24,64 @@ const fadeUp = {
 };
 
 export default function SepetPage() {
+  const { user } = useAuth();
   const { cart, updateQty, removeItem, subtotal, count } = useCart();
+  const { discounts, applyToCart, validateCoupon } = useDiscounts();
   const [siteSettings, setSiteSettings] = useState(null);
+  const [isFirstOrder, setIsFirstOrder] = useState(false);
+  useEffect(() => {
+    if (!user) { setIsFirstOrder(false); return; }
+    getOrdersByUser(user.uid).then((orders) => setIsFirstOrder(orders.length === 0));
+  }, [user?.uid]);
   useEffect(() => { getSettings().then((s) => setSiteSettings(s)); }, []);
   const FREE_SHIPPING_THRESHOLD = Number(siteSettings?.freeShippingThreshold ?? 500);
   const SHIPPING_COST = Number(siteSettings?.shippingCost ?? 29.90);
   const activeCarrier = (siteSettings?.carriers ?? []).find((c) => c.enabled);
+
   const [couponCode, setCouponCode] = useState("");
-  const [couponApplied, setCouponApplied] = useState(false);
+  const [appliedCouponCode, setAppliedCouponCode] = useState("");
   const [couponError, setCouponError] = useState("");
 
+  // Restore applied coupon from sessionStorage on mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem("gb_coupon");
+    if (saved) {
+      try {
+        const { code } = JSON.parse(saved);
+        setCouponCode(code);
+        setAppliedCouponCode(code);
+      } catch {}
+    }
+  }, []);
+
+  const discountResult = useMemo(
+    () => applyToCart(cart, appliedCouponCode, isFirstOrder),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cart, appliedCouponCode, applyToCart, isFirstOrder]
+  );
+
+  const { totalDiscount, breakdown, appliedCoupon } = discountResult;
+  const couponApplied = !!appliedCoupon || (appliedCouponCode && !couponError && breakdown.some(b => b.type === "cart_coupon"));
+
   const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-  const discount = couponApplied ? subtotal * 0.1 : 0;
-  const total = subtotal - discount + shipping;
+  const total = subtotal - totalDiscount + shipping;
 
   const handleCoupon = () => {
-    if (couponCode.trim().toUpperCase() === "GIRLBOSS10") {
-      setCouponApplied(true);
-      setCouponError("");
-    } else {
-      setCouponApplied(false);
-      setCouponError("Geçersiz kupon kodu.");
+    const result = validateCoupon(couponCode, subtotal);
+    if (!result.valid) {
+      setCouponError(result.error || "Geçersiz kupon kodu.");
+      return;
     }
+    setAppliedCouponCode(couponCode.trim().toUpperCase());
+    setCouponError("");
+    sessionStorage.setItem("gb_coupon", JSON.stringify({ code: couponCode.trim().toUpperCase() }));
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCouponCode("");
+    setCouponCode("");
+    setCouponError("");
+    sessionStorage.removeItem("gb_coupon");
   };
 
   return (
@@ -131,6 +171,13 @@ export default function SepetPage() {
                   alignItems: "start",
                 }}
               >
+                {/* Promo Banners — testMode=true shows all for preview, change to false for production */}
+                {discounts.length > 0 && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <PromoBanners discounts={discounts} testMode={true} isFirstOrder={isFirstOrder} />
+                  </div>
+                )}
+
                 {/* Items */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                   <AnimatePresence>
@@ -147,19 +194,19 @@ export default function SepetPage() {
                         {/* Visual */}
                         <Link href={`/urunler/${item.slug}`}>
                           <div
-                            className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+                            className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
                             style={{ background: item.gradient }}
                           >
                             {(() => {
                               const src = item.images?.[0];
                               return src ? (
-                                <img
+                                <Image
                                   src={src}
                                   alt={item.name}
+                                  fill
                                   draggable={false}
+                                  sizes="(max-width: 640px) 80px, 96px"
                                   style={{
-                                    width: '100%',
-                                    height: '100%',
                                     objectFit: 'cover',
                                     objectPosition: 'center',
                                     pointerEvents: 'none',
@@ -267,18 +314,25 @@ export default function SepetPage() {
                         <span className="text-[#737373]">Ara Toplam ({count} ürün)</span>
                         <span className="font-semibold">₺{subtotal.toFixed(2)}</span>
                       </div>
-                      {couponApplied && (
+                      {/* Discount breakdown */}
+                      {breakdown.map((item, i) => (
                         <motion.div
+                          key={i}
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           className="flex justify-between text-sm"
                         >
                           <span className="text-green-600 flex items-center gap-1">
-                            <Tag size={11} /> Kupon (%10)
+                            {item.type === "cart_coupon" && <Tag size={11} />}
+                            {item.type === "product" && <Percent size={11} />}
+                            {item.type === "bxgy" && <Gift size={11} />}
+                            {item.type === "threshold" && <Zap size={11} />}
+                            {item.label}
+                            {item.sublabel && <span className="text-[10px] opacity-70">({item.sublabel})</span>}
                           </span>
-                          <span className="font-semibold text-green-600">−₺{discount.toFixed(2)}</span>
+                          <span className="font-semibold text-green-600">−₺{item.amount.toFixed(2)}</span>
                         </motion.div>
-                      )}
+                      ))}
                       <div className="flex justify-between text-sm">
                         <span className="text-[#737373]">Kargo</span>
                         <span className="font-semibold">
@@ -303,7 +357,7 @@ export default function SepetPage() {
                           <div style={{ flex: 1 }}>
                             <GBInput
                               name="kupon"
-                              placeholder="GIRLBOSS10"
+                              placeholder="Kupon Kodun"
                               label="Kupon Kodu"
                               value={couponCode}
                               onChange={(e) => { setCouponCode(e.target.value); setCouponError(""); }}
@@ -325,10 +379,10 @@ export default function SepetPage() {
                       >
                         <div className="flex items-center gap-2">
                           <Tag size={13} className="text-green-600" />
-                          <span className="text-xs font-semibold text-green-700">GIRLBOSS10 uygulandı</span>
+                          <span className="text-xs font-semibold text-green-700">{appliedCouponCode} uygulandı</span>
                         </div>
                         <button
-                          onClick={() => { setCouponApplied(false); setCouponCode(""); }}
+                          onClick={handleRemoveCoupon}
                           className="text-[10px] text-green-600 hover:text-green-800 font-semibold"
                         >
                           Kaldır

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   User, Package, Heart, ShoppingBag, LogOut, Settings,
@@ -587,8 +588,8 @@ function OrdersTab({ orders, loading, user }) {
                   {/* Thumbnails row */}
                   <div className="flex gap-2 mb-3 flex-wrap">
                     {(order.items || []).map((item, idx) => (
-                      <div key={item.id || idx} className="w-11 h-11 rounded-xl overflow-hidden shrink-0" style={{ background: item.gradient || "#f0e8e4" }} title={item.name}>
-                        {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />}
+                      <div key={item.id || idx} className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0" style={{ background: item.gradient || "#f0e8e4" }} title={item.name}>
+                        {item.images?.[0] && <Image src={item.images[0]} alt={item.name} fill sizes="44px" style={{ objectFit: 'cover' }} />}
                       </div>
                     ))}
                     <div className="flex flex-col justify-center">
@@ -683,8 +684,8 @@ function OrdersTab({ orders, loading, user }) {
                               const alreadyRev = reviewed.has(itemId);
                               return (
                                 <div key={itemId || idx} className="flex items-center gap-3 bg-[#fdf8f5] rounded-xl px-3 py-2.5">
-                                  <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: item.gradient || "#f0e8e4" }}>
-                                    {item.images?.[0] && <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />}
+                                  <div className="relative w-9 h-9 rounded-lg overflow-hidden shrink-0" style={{ background: item.gradient || "#f0e8e4" }}>
+                                    {item.images?.[0] && <Image src={item.images[0]} alt={item.name} fill sizes="36px" style={{ objectFit: 'cover' }} />}
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-semibold text-[#2d2d2d] truncate">{item.name}</p>

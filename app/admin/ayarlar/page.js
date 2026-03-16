@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSettings, updateSettings, seedProducts } from "@/lib/firebase/firestore";
-import { Save, Upload, Plus, Trash2, CreditCard, Package, Truck, Building2, ShieldCheck } from "lucide-react";
+import { getSettings, updateSettings, seedProducts, seedBlogPosts } from "@/lib/firebase/firestore";
+import { Save, Upload, Plus, Trash2, CreditCard, Package, Truck, Building2, ShieldCheck, FileText } from "lucide-react";
 import GBButton from "@/lib/components/ui/GBButton";
 import GBInput from "@/lib/components/ui/GBInput";
 import AdminModal from "@/lib/components/admin/AdminModal";
 import { products as hardcodedProducts } from "@/lib/data/products";
+import { blogPosts as hardcodedBlogPosts } from "@/lib/data/blogPosts";
 
 const DEFAULT_CARRIERS = [
   { name: "Yurtiçi Kargo", code: "yurtici", enabled: true,  estimatedDays: "1-2", trackingUrl: "" },
@@ -37,9 +38,9 @@ const defaultSettings = {
   couponDiscount: 10,  authProviders: {
     emailPassword: true,
     google: true,
-    apple: true,
     forgotPassword: true,
-  },};
+  },
+};
 
 const TABS = [
   { id: "genel",      label: "Genel" },
@@ -56,6 +57,9 @@ export default function AdminSettingsPage() {
   const [seedModal, setSeedModal] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seeded, setSeeded] = useState(false);
+  const [blogSeedModal, setBlogSeedModal] = useState(false);
+  const [blogSeeding, setBlogSeeding] = useState(false);
+  const [blogSeeded, setBlogSeeded] = useState(false);
 
   useEffect(() => {
     getSettings().then((data) => {
@@ -136,6 +140,19 @@ export default function AdminSettingsPage() {
     } finally {
       setSeeding(false);
       setSeedModal(false);
+    }
+  };
+
+  const handleBlogSeed = async () => {
+    setBlogSeeding(true);
+    try {
+      await seedBlogPosts(hardcodedBlogPosts);
+      setBlogSeeded(true);
+    } catch (err) {
+      console.error("Blog seed error:", err);
+    } finally {
+      setBlogSeeding(false);
+      setBlogSeedModal(false);
     }
   };
 
@@ -458,36 +475,7 @@ export default function AdminSettingsPage() {
             </label>
           </div>
 
-          {/* Apple */}
-          <div className="border border-[#f0e8e4] rounded-xl p-4">
-            <label className="flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-3">
-                <svg style={{ width: 20, height: 20, fill: '#000', flexShrink: 0 }} viewBox="0 0 24 24">
-                  <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/>
-                </svg>
-                <div>
-                  <p className="text-sm font-semibold text-[#2d2d2d]">Apple</p>
-                  <p className="text-xs text-[#a3a3a3]">Apple ID ile giriş (iOS/macOS kullanıcıları)</p>
-                </div>
-              </div>
-              <div className="relative">
-                <input
-                  type="checkbox"
-                  checked={form.authProviders.apple}
-                  onChange={(e) => setForm((f) => ({ ...f, authProviders: { ...f.authProviders, apple: e.target.checked } }))}
-                  className="sr-only"
-                  id="ap-apple"
-                />
-                <label htmlFor="ap-apple" className="flex items-center cursor-pointer">
-                  <div className={`w-11 h-6 rounded-full transition-colors ${form.authProviders.apple ? "bg-[#b76e79]" : "bg-[#e5e7eb]"}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow mt-1 transition-transform ${form.authProviders.apple ? "translate-x-6" : "translate-x-1"}`} />
-                  </div>
-                </label>
-              </div>
-            </label>
-          </div>
-
-          {!form.authProviders.emailPassword && !form.authProviders.google && !form.authProviders.apple && (
+          {!form.authProviders.emailPassword && !form.authProviders.google && (
             <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
               ⚠️ En az bir giriş yöntemi aktif olmalıdır.
             </p>
@@ -500,17 +488,28 @@ export default function AdminSettingsPage() {
         <section className="bg-white rounded-2xl border border-[#f0e8e4] p-5 space-y-4">
           <h3 className="text-sm font-bold text-[#2d2d2d]">Veri Yönetimi</h3>
           <p className="text-xs text-[#737373]">
-            Hardcoded ürün verilerini Firestore'a aktarın. Bu işlem yalnızca bir kez yapılmalıdır.
+            Hardcoded verileri Firestore'a aktarın. Bu işlem yalnızca bir kez yapılmalıdır.
           </p>
-          <GBButton
-            variant={seeded ? "outline" : "secondary"}
-            size="sm"
-            icon={<Upload size={15} />}
-            onClick={() => setSeedModal(true)}
-            disabled={seeded}
-          >
-            {seeded ? "Ürünler Aktarıldı ✓" : "Ürünleri Firestore'a Aktar"}
-          </GBButton>
+          <div className="flex flex-wrap gap-3">
+            <GBButton
+              variant={seeded ? "outline" : "secondary"}
+              size="sm"
+              icon={<Upload size={15} />}
+              onClick={() => setSeedModal(true)}
+              disabled={seeded}
+            >
+              {seeded ? "Ürünler Aktarıldı ✓" : "Ürünleri Firestore'a Aktar"}
+            </GBButton>
+            <GBButton
+              variant={blogSeeded ? "outline" : "secondary"}
+              size="sm"
+              icon={<FileText size={15} />}
+              onClick={() => setBlogSeedModal(true)}
+              disabled={blogSeeded}
+            >
+              {blogSeeded ? "Blog Yazıları Aktarıldı ✓" : "Blog Yazılarını Firestore'a Aktar"}
+            </GBButton>
+          </div>
         </section>
       )}
 
@@ -523,6 +522,18 @@ export default function AdminSettingsPage() {
           <GBButton variant="outline" size="sm" fullWidth onClick={() => setSeedModal(false)}>İptal</GBButton>
           <GBButton variant="primary" size="sm" fullWidth onClick={handleSeed} disabled={seeding}>
             {seeding ? "Aktarılıyor…" : "Aktar"}
+          </GBButton>
+        </div>
+      </AdminModal>
+
+      <AdminModal open={blogSeedModal} onClose={() => setBlogSeedModal(false)} title="Blog Yazılarını Aktar" maxWidth="24rem">
+        <p className="text-sm text-[#525252] mb-4">
+          {hardcodedBlogPosts.length} blog yazısı Firestore'a aktarılacak. Bu işlem mevcut yazıları silmez, yeni kayıtlar oluşturur. Devam etmek istiyor musunuz?
+        </p>
+        <div className="flex gap-3">
+          <GBButton variant="outline" size="sm" fullWidth onClick={() => setBlogSeedModal(false)}>İptal</GBButton>
+          <GBButton variant="primary" size="sm" fullWidth onClick={handleBlogSeed} disabled={blogSeeding}>
+            {blogSeeding ? "Aktarılıyor…" : "Aktar"}
           </GBButton>
         </div>
       </AdminModal>

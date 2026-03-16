@@ -41,9 +41,10 @@ function NavbarDark() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
         <motion.div
           whileHover={{ scale: 1.05 }}
-          className="text-2xl font-bold tracking-[0.3em] text-shimmer cursor-pointer"
+          className="flex items-center gap-2.5 cursor-pointer"
         >
-          {brand.name}
+          <img src="/icon.png" alt="GIRLBOSS" className="h-10 w-auto brightness-0 invert" />
+          <span className="text-lg font-bold tracking-[0.2em] text-shimmer">{brand.name}</span>
         </motion.div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -426,7 +427,10 @@ function FooterDark() {
     <footer className="py-12 bg-[#0a0a0a] border-t border-[#1f1f1f]">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-xl font-bold tracking-[0.3em] text-shimmer">{brand.name}</div>
+          <div className="flex items-center gap-2.5">
+            <img src="/icon.png" alt="GIRLBOSS" className="h-8 w-auto brightness-0 invert" />
+            <span className="text-lg font-bold tracking-[0.2em] text-shimmer">{brand.name}</span>
+          </div>
           <div className="flex gap-8">
             {["Ürünler", "Hakkımızda", "İletişim", "SSS"].map((item) => (
               <a key={item} href="#" className="text-xs tracking-wider uppercase text-[#525252] hover:text-[#d4a0a7] transition-colors">
