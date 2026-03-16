@@ -2,10 +2,11 @@ import { company } from "@/lib/config/company";
 
 export default function manifest() {
   return {
+    id: "/",
     name: company.brandName,
     short_name: company.brandName,
     description: company.brandDescription,
-    start_url: "/",
+    start_url: "/?source=pwa",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
@@ -13,6 +14,8 @@ export default function manifest() {
     theme_color: "#b76e79",
     categories: ["shopping", "lifestyle", "beauty"],
     lang: "tr",
+    dir: "ltr",
+    prefer_related_applications: false,
     icons: [
       {
         src: "/icon-192.png",
