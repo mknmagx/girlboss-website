@@ -144,7 +144,7 @@ export default function AdminStockDetailPage() {
         </Link>
       </div>
 
-      <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 300px", alignItems: "start" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 items-start">
         {/* Left: Stats + History */}
         <div className="space-y-5">
           {/* KPI Cards */}

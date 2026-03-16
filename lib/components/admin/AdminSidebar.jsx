@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAdmin } from "@/lib/hooks/useAdmin";
 import {
   LayoutDashboard, Package, ShoppingCart, Users, BarChart3,
-  Settings, FileText, ChevronLeft, ChevronRight, Sparkles, Plus, BadgePercent,
+  Settings, FileText, ChevronLeft, ChevronRight, Plus, BadgePercent, X,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -20,7 +20,7 @@ const menuItems = [
   { label: "Ayarlar",    href: "/admin/ayarlar",     icon: Settings,        section: "settings" },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ mobileOpen, onMobileClose }) {
   const pathname = usePathname();
   const { can } = useAdmin();
   const [collapsed, setCollapsed] = useState(false);
@@ -32,10 +32,12 @@ export default function AdminSidebar() {
 
   return (
     <aside
-      className="h-screen sticky top-0 flex flex-col border-r border-[#f0e8e4] bg-white transition-all duration-300"
+      className={`fixed inset-y-0 left-0 z-50 h-screen flex flex-col border-r border-[#f0e8e4] bg-white transition-all duration-300 lg:sticky lg:top-0 lg:z-30 ${
+        mobileOpen ? "translate-x-0 shadow-2xl lg:shadow-none" : "-translate-x-full lg:translate-x-0"
+      }`}
       style={{ width: collapsed ? "4.5rem" : "16rem" }}
     >
-      {/* Logo */}
+      {/* Logo + Mobile Close */}
       <div className="flex items-center gap-2 px-4 h-16 border-b border-[#f0e8e4]">
         <img
           src="/icon.png"
@@ -43,8 +45,15 @@ export default function AdminSidebar() {
           className={collapsed ? "h-7 w-auto" : "h-8 w-auto"}
         />
         {!collapsed && (
-          <span className="text-[10px] font-medium text-[#b76e79] tracking-normal">Admin</span>
+          <span className="text-[10px] font-medium text-[#b76e79] tracking-normal flex-1">Admin</span>
         )}
+        <button
+          onClick={onMobileClose}
+          className="lg:hidden w-7 h-7 rounded-lg flex items-center justify-center text-[#a3a3a3] hover:text-[#525252] hover:bg-[#fdf8f5] transition-colors"
+          aria-label="Kapat"
+        >
+          <X size={16} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -56,6 +65,7 @@ export default function AdminSidebar() {
             <div key={item.href} className="flex items-center gap-1">
               <Link
                 href={item.href}
+                onClick={onMobileClose}
                 className={`flex-1 flex items-center gap-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   active
                     ? "bg-[#fff0f3] text-[#b76e79] shadow-sm"
@@ -69,6 +79,7 @@ export default function AdminSidebar() {
               </Link>
               {!collapsed && item.action && (
                 <Link href={item.action.href} title={item.action.title}
+                  onClick={onMobileClose}
                   className="w-7 h-7 rounded-lg flex items-center justify-center text-[#a3a3a3] hover:text-[#b76e79] hover:bg-[#fff0f3] transition-colors shrink-0">
                   <Plus size={14} />
                 </Link>

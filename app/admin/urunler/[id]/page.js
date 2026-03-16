@@ -287,7 +287,7 @@ export default function AdminProductEditPage() {
 
             {/* Existing image thumbnails */}
             {images.length > 0 && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
                 {images.map((url, idx) => (
                   <div key={url} className="relative group rounded-xl overflow-hidden border border-[#f0e8e4] aspect-square bg-[#fdf8f5]">
                     <img src={url} alt={`Görsel ${idx + 1}`} className="w-full h-full object-cover" />

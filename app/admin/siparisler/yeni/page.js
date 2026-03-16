@@ -226,7 +226,7 @@ export default function AdminNewOrderPage() {
         </div>
       )}
 
-      <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 320px", alignItems: "start" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
         {/* Left Column */}
         <div className="space-y-5">
 
@@ -310,7 +310,7 @@ export default function AdminNewOrderPage() {
                   rows={2} className="w-full rounded-xl border border-[#e5e5e5] px-3 py-2 text-sm resize-none focus:outline-none focus:border-[#b76e79] transition-colors"
                   placeholder="Mahalle, sokak, bina no, daire…" />
               </Field>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Field label="Şehir *" error={errors.sehir}>
                   <input value={delivery.sehir} onChange={(e) => { setD("sehir")(e); clearError("sehir"); }}
                     className="w-full rounded-xl border border-[#e5e5e5] px-3 py-2 text-sm focus:outline-none focus:border-[#b76e79] transition-colors" />

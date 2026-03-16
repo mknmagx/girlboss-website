@@ -2,10 +2,10 @@
 
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { Bell, LogOut, ExternalLink } from "lucide-react";
+import { Bell, LogOut, ExternalLink, Menu } from "lucide-react";
 import Link from "next/link";
 
-export default function AdminTopbar() {
+export default function AdminTopbar({ onMenuToggle }) {
   const { user, logout } = useAuth();
   const router = useRouter();
 
@@ -15,8 +15,15 @@ export default function AdminTopbar() {
   };
 
   return (
-    <header className="h-16 border-b border-[#f0e8e4] bg-white flex items-center justify-between px-6 sticky top-0 z-40">
+    <header className="h-16 border-b border-[#f0e8e4] bg-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
       <div className="flex items-center gap-3">
+        <button
+          onClick={onMenuToggle}
+          className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center hover:bg-[#fdf8f5] border border-[#f0e8e4] transition-colors"
+          aria-label="Menüyü Aç"
+        >
+          <Menu size={18} className="text-[#737373]" />
+        </button>
         <h2 className="text-sm font-semibold text-[#2d2d2d]">Yönetim Paneli</h2>
       </div>
 
@@ -25,7 +32,7 @@ export default function AdminTopbar() {
         <Link
           href="/"
           target="_blank"
-          className="flex items-center gap-1.5 text-xs text-[#737373] hover:text-[#b76e79] transition-colors"
+          className="hidden sm:flex items-center gap-1.5 text-xs text-[#737373] hover:text-[#b76e79] transition-colors"
         >
           <ExternalLink size={13} />
           Siteyi Gör
