@@ -157,7 +157,10 @@ export default function ProductCard({ product, index = 0 }) {
                 src={product.images[0]}
                 alt={product.name}
                 fill
+                priority={index < 3}
                 sizes="(max-width: 640px) 60vw, (max-width: 1024px) 30vw, 20vw"
+                placeholder="blur"
+                blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMjU1LDI0MCwyNDAsMC41KSIvPjwvc3ZnPg=="
                 draggable={false}
                 style={{
                   objectFit: "contain",

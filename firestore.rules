@@ -51,6 +51,20 @@ service cloud.firestore {
       // Only admin/editor can create, update, delete
       allow create, update: if isAdminOrEditor();
       allow delete: if isAdmin();
+
+      // Reviews subcollection (public read, signed-in create, admin manage)
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin();
+      }
+
+      // Stock logs subcollection (admin/editor only)
+      match /stockLogs/{logId} {
+        allow read: if isAdminOrEditor();
+        allow create: if isAdminOrEditor();
+        allow update, delete: if isAdmin();
+      }
     }
 
     // ─── ORDERS ───────────────────────────────────────
@@ -65,6 +79,33 @@ service cloud.firestore {
       allow update: if isAdmin();
       // Only admins can delete orders
       allow delete: if isAdmin();
+
+      // Refunds subcollection — admin full access; customer can read/create for own order
+      match /refunds/{refundId} {
+        allow read: if isAdmin() || (
+          isSignedIn() &&
+          get(/databases/$(database)/documents/orders/$(orderId)).data.uid == request.auth.uid
+        );
+        allow create: if isAdmin() || (
+          isSignedIn() &&
+          get(/databases/$(database)/documents/orders/$(orderId)).data.uid == request.auth.uid
+        );
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
+
+      // Reviews subcollection — admin full access; customer can read/create for own order
+      match /reviews/{reviewId} {
+        allow read: if isAdmin() || (
+          isSignedIn() &&
+          get(/databases/$(database)/documents/orders/$(orderId)).data.uid == request.auth.uid
+        );
+        allow create: if isAdmin() || (
+          isSignedIn() &&
+          get(/databases/$(database)/documents/orders/$(orderId)).data.uid == request.auth.uid
+        );
+        allow update, delete: if isAdmin();
+      }
     }
 
     // ─── BLOG ─────────────────────────────────────────

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Sparkles, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
@@ -41,17 +42,18 @@ export default function UrunlerClient({ products }) {
           alignItems: "center",
         }}
       >
-        {/* Background image */}
-        <div
-          // className="bgtop"
+        {/* Background image — next/image ile preload + WebP/AVIF otomatik */}
+        <Image
+          src="https://res.cloudinary.com/dnfmvs2ci/image/upload/v1773692691/mkngroup/girlboss/owOvV4K0fvLF-u7FZSHac_gK8icfsj_mgitlt.png"
+          alt=""
+          fill
+          priority
+          quality={85}
+          sizes="100vw"
           style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "url('https://res.cloudinary.com/dnfmvs2ci/image/upload/v1773692691/mkngroup/girlboss/owOvV4K0fvLF-u7FZSHac_gK8icfsj_mgitlt.png')",
-            backgroundSize: "cover",
-            backgroundPosition: "bottom",
-            backgroundRepeat: "no-repeat",
+            objectFit: "cover",
+            objectPosition: "bottom",
+            pointerEvents: "none",
           }}
         />
         {/* Gradient overlay — left dark, right transparent */}
@@ -275,6 +277,8 @@ export default function UrunlerClient({ products }) {
               marginBottom: "2.5rem",
               paddingBottom: "1.5rem",
               borderBottom: "1px solid #f0e8e4",
+              position: "relative",
+              zIndex: 10,
             }}
           >
             <p className="text-sm text-[#737373]">
@@ -285,7 +289,7 @@ export default function UrunlerClient({ products }) {
             </p>
             <div className="flex items-center gap-3">
               <SlidersHorizontal size={16} className="text-[#b76e79]" />
-              <div style={{ minWidth: "220px" }}>
+              <div style={{ minWidth: "220px", position: "relative", zIndex: 20 }}>
                 <GBSelect
                   name="sortBy"
                   value={sortBy}

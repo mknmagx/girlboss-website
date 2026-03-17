@@ -96,8 +96,10 @@ export default function ProductImageCarousel({
               src={images[current]}
               alt={alt || ""}
               fill
-              priority
+              priority={current === 0}
               sizes="(max-width: 768px) 100vw, 50vw"
+              placeholder="blur"
+              blurDataURL="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9InJnYmEoMjU1LDIzMCwyMzUsMC44KSIvPjwvc3ZnPg=="
               style={{
                 objectFit: "cover",
                 objectPosition: "center",
@@ -254,8 +256,9 @@ export default function ProductImageCarousel({
                 src={img}
                 alt=""
                 fill
+                loading="lazy"
                 draggable={false}
-                sizes="10vw"
+                sizes="64px"
                 style={{
                   objectFit: "contain",
                   pointerEvents: "none",
